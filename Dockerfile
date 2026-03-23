@@ -4,8 +4,8 @@ WORKDIR /app
 COPY . .
 RUN gradle buildFatJar --no-daemon
 
-# Etapa 2: Runtime
-FROM openjdk:21-jdk-slim
+# Etapa 2: Runtime — ✅ imagen actualizada
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 COPY --from=build /app/build/libs/*-all.jar app.jar
 EXPOSE 8080
