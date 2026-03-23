@@ -1,0 +1,150 @@
+<div class="card">
+    <div class="card-header">
+        <h3>Gestión de Usuarios</h3>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <button class="btn btn-primary" onclick="window.usuarioModule.showCreateModal()">
+                <i class="fas fa-plus"></i> Nuevo Usuario
+            </button>
+        </div>
+
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Foto</th>
+                        <th>Usuario</th>
+                        <th>Perfil</th>
+                        <th>Estado</th>
+                        <th>Correo</th>
+                        <th>Celular</th>
+                        <th>Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody id="usuarioTableBody">
+                    <tr>
+                        <td colspan="8" class="text-center">Cargando...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-container">
+                <nav>
+                    <ul class="pagination" id="pagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="usuarioModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="usuarioModalTitle">Crear Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="usuarioForm">
+                    <input type="hidden" id="usuarioId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="usuarioNombre" class="form-label">Nombre de Usuario *</label>
+                                <input type="text" class="form-control" id="usuarioNombre" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="usuarioPerfil" class="form-label">Perfil *</label>
+                                <select class="form-control" id="usuarioPerfil" required>
+                                    <option value="">Seleccione un perfil</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="usuarioPassword" class="form-label">Contraseña *</label>
+                                <input type="password" class="form-control" id="usuarioPassword">
+                                <small class="text-muted">Dejar en blanco para mantener la contraseña actual</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="usuarioEstado" class="form-label">Estado *</label>
+                                <select class="form-control" id="usuarioEstado" required>
+                                    <option value="1">Activo</option>
+                                    <option value="0">Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="usuarioCorreo" class="form-label">Correo Electrónico *</label>
+                                <input type="email" class="form-control" id="usuarioCorreo" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="usuarioCelular" class="form-label">Número Celular</label>
+                                <input type="text" class="form-control" id="usuarioCelular">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="usuarioFoto" class="form-label">Foto de Perfil</label>
+                        <input type="file" class="form-control" id="usuarioFoto" accept="image/*">
+                        <div id="fotoPreview" class="mt-2"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="window.usuarioModule.saveUsuario()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="usuarioDetailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalle del Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <img id="detailFoto" src="" alt="Foto" class="profile-image">
+                </div>
+                <div class="mb-3">
+                    <strong>ID:</strong> <span id="detailId"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Usuario:</strong> <span id="detailNombre"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Perfil:</strong> <span id="detailPerfil"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Estado:</strong> <span id="detailEstado"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Correo:</strong> <span id="detailCorreo"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Celular:</strong> <span id="detailCelular"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

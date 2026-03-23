@@ -1,0 +1,118 @@
+<div class="card">
+    <div class="card-header">
+        <h3>Gestión de Permisos por Perfil</h3>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <button class="btn btn-primary" onclick="window.permisosPerfilModule.showCreateModal()">
+                <i class="fas fa-plus"></i> Nuevo Permiso
+            </button>
+        </div>
+
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Perfil</th>
+                        <th>Módulo</th>
+                        <th>Agregar</th>
+                        <th>Editar</th>
+                        <th>Consultar</th>
+                        <th>Eliminar</th>
+                        <th>Detalle</th>
+                        <th>Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody id="permisosTableBody">
+                    <tr>
+                        <td colspan="9" class="text-center">Cargando...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-container">
+                <nav>
+                    <ul class="pagination" id="pagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="permisosModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="permisosModalTitle">Configurar Permisos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="permisosForm">
+                    <input type="hidden" id="permisosId">
+                    <div class="mb-3">
+                        <label for="permisosPerfil" class="form-label">Perfil *</label>
+                        <select class="form-control" id="permisosPerfil" required>
+                            <option value="">Seleccione un perfil</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="permisosModulo" class="form-label">Módulo *</label>
+                        <select class="form-control" id="permisosModulo" required>
+                            <option value="">Seleccione un módulo</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="permisoAgregar">
+                                <label class="form-check-label" for="permisoAgregar">
+                                    Agregar
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="permisoEditar">
+                                <label class="form-check-label" for="permisoEditar">
+                                    Editar
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="permisoConsultar">
+                                <label class="form-check-label" for="permisoConsultar">
+                                    Consultar
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="permisoEliminar">
+                                <label class="form-check-label" for="permisoEliminar">
+                                    Eliminar
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="permisoDetalle">
+                                <label class="form-check-label" for="permisoDetalle">
+                                    Detalle
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="window.permisosPerfilModule.savePermisos()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>

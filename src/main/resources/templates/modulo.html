@@ -1,0 +1,81 @@
+<div class="card">
+    <div class="card-header">
+        <h3>Gestión de Módulos</h3>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <button class="btn btn-primary" onclick="window.moduloModule.showCreateModal()">
+                <i class="fas fa-plus"></i> Nuevo Módulo
+            </button>
+        </div>
+
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre del Módulo</th>
+                        <th>Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody id="moduloTableBody">
+                    <tr>
+                        <td colspan="3" class="text-center">Cargando...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-container">
+                <nav>
+                    <ul class="pagination" id="pagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="moduloModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="moduloModalTitle">Crear Módulo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="moduloForm">
+                    <input type="hidden" id="moduloId">
+                    <div class="mb-3">
+                        <label for="moduloNombre" class="form-label">Nombre del Módulo *</label>
+                        <input type="text" class="form-control" id="moduloNombre" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="window.moduloModule.saveModulo()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="moduloDetailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalle del Módulo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <strong>ID:</strong> <span id="detailId"></span>
+                </div>
+                <div class="mb-3">
+                    <strong>Nombre:</strong> <span id="detailNombre"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
