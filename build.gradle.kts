@@ -72,3 +72,13 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 tasks.test {
     useJUnit()
 }
+
+tasks.named<Jar>("jar") {
+    from(sourceSets.main.get().resources)
+}
+
+ktor {
+    fatJar {
+        archiveFileName.set("seguridad-app-all.jar")
+    }
+}
