@@ -5,19 +5,21 @@ import com.zaxxer.hikari.HikariDataSource
 import org.jetbrains.exposed.sql.Database
 
 fun configureDatabase(): Database {
+    val databaseUrl = System.getenv("DATABASE_URL")
+        ?: "jdbc:postgresql://localhost:5432/seguridad_db"
+    val databaseUser = System.getenv("DATABASE_USER") ?: "postgres"
+    val databasePassword = System.getenv("DATABASE_PASSWORD") ?: "postgres"
+
     val config = HikariConfig().apply {
-        jdbcUrl = "jdbc:postgresql://ep-long-shape-aeyhfcxk-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-        username = "neondb_owner"
-        password = "npg_BEnp01cOLGIN"
+        jdbcUrl = databaseUrl
+        username = databaseUser
+        password = databasePassword
         driverClassName = "org.postgresql.Driver"
         maximumPoolSize = 10
         isAutoCommit = false
         transactionIsolation = "TRANSACTION_REPEATABLE_READ"
-
-        // ✅ Requerido para Neon Tech (SSL)
         addDataSourceProperty("ssl", "true")
         addDataSourceProperty("sslmode", "require")
-
         validate()
     }
 
