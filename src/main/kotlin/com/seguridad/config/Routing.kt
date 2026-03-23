@@ -41,9 +41,9 @@ fun Application.configureRouting(
 
     routing {
         staticResources("/static", "static")
-        staticResources("/css", "static/css")
-        staticResources("/js", "static/js")
-        staticResources("/uploads", "static/uploads")
+        //staticResources("/css", "static/css")
+        //staticResources("/js", "static/js")
+        //staticResources("/uploads", "static/uploads")
 
         get("/") {
             call.respondRedirect("/login")
