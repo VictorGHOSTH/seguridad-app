@@ -23,10 +23,8 @@ fun Application.configureRouting(
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             cause.printStackTrace()
-            call.response.status(HttpStatusCode.Found)
-            call.response.header(HttpHeaders.Location, "/error?code=500&message=${cause.message}")
-            call.response.header(HttpHeaders.ContentLength, "0")
-            call.respondText("", status = HttpStatusCode.Found)
+            call.response.headers.append(HttpHeaders.Location, "/error?code=500&message=${cause.message}")
+            call.respond(HttpStatusCode.Found, "")
         }
         status(HttpStatusCode.NotFound) { call, status ->
             call.respondRedirect("/error?code=404&message=Página no encontrada")
@@ -35,7 +33,6 @@ fun Application.configureRouting(
             call.response.headers.append(HttpHeaders.Location, "/error?code=401&message=No autorizado")
             call.respond(HttpStatusCode.Found, "")
         }
-
         status(HttpStatusCode.Forbidden) { call, status ->
             call.response.headers.append(HttpHeaders.Location, "/error?code=403&message=Acceso prohibido")
             call.respond(HttpStatusCode.Found, "")
@@ -52,22 +49,50 @@ fun Application.configureRouting(
             call.respondRedirect("/login")
         }
 
+        // ✅ Leer templates desde classpath en lugar de File()
         get("/login") {
-            call.respondFile(java.io.File("src/main/resources/templates/login.html"))
+            val content = Thread.currentThread()
+                .contextClassLoader
+                .getResourceAsStream("templates/login.html")
+                ?.readBytes()
+                ?.toString(Charsets.UTF_8)
+                ?: "Login no encontrado"
+            call.respondText(content, ContentType.Text.Html)
         }
 
         get("/dashboard") {
-            call.respondFile(java.io.File("src/main/resources/templates/dashboard.html"))
+            val content = Thread.currentThread()
+                .contextClassLoader
+                .getResourceAsStream("templates/dashboard.html")
+                ?.readBytes()
+                ?.toString(Charsets.UTF_8)
+                ?: "Dashboard no encontrado"
+            call.respondText(content, ContentType.Text.Html)
         }
 
         get("/error") {
-            call.respondFile(java.io.File("src/main/resources/templates/error.html"))
+            val content = Thread.currentThread()
+                .contextClassLoader
+                .getResourceAsStream("templates/error.html")
+                ?.readBytes()
+                ?.toString(Charsets.UTF_8)
+                ?: "Error no encontrado"
+            call.respondText(content, ContentType.Text.Html)
         }
 
         get("/templates/{name}") {
             val name = call.parameters["name"]
             if (name != null) {
-                call.respondFile(java.io.File("src/main/resources/templates/$name"))
+                val content = Thread.currentThread()
+                    .contextClassLoader
+                    .getResourceAsStream("templates/$name")
+                    ?.readBytes()
+                    ?.toString(Charsets.UTF_8)
+                if (content != null) {
+                    call.respondText(content, ContentType.Text.Html)
+                } else {
+                    call.respond(HttpStatusCode.NotFound)
+                }
             }
         }
 
