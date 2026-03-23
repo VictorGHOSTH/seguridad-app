@@ -12,6 +12,13 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 
+@Serializable
+data class LoginRequest(
+    val username: String,
+    val password: String,
+    val recaptchaToken: String  // ✅ reemplaza captchaResult y expectedResult
+)
+
 fun Route.authRoutes(
     jwtService: JwtService,
     captchaService: CaptchaService,
@@ -21,8 +28,9 @@ fun Route.authRoutes(
         post("/login") {
             val loginRequest = call.receive<LoginRequest>()
 
-            if (!captchaService.validateCaptcha(loginRequest.captchaResult, loginRequest.expectedResult)) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Captcha incorrecto"))
+            // ✅ Verificar reCAPTCHA de Google
+            if (!captchaService.validateRecaptcha(loginRequest.recaptchaToken)) {
+                call.respond(HttpStatusCode.BadRequest, mapOf<String, String>("error" to "Captcha inválido"))
                 return@post
             }
 
@@ -32,13 +40,8 @@ fun Route.authRoutes(
                 val token = jwtService.generateToken(usuario.id, usuario.strNombreUsuario, usuario.idPerfil)
                 call.respond(mapOf("token" to token, "usuario" to usuario))
             } else {
-                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Credenciales inválidas o usuario inactivo"))
+                call.respond(HttpStatusCode.Unauthorized, mapOf<String, String>("error" to "Credenciales inválidas o usuario inactivo"))
             }
-        }
-
-        get("/captcha") {
-            val captcha = captchaService.generateCaptcha()
-            call.respond(captcha)
         }
 
         get("/verify") {
@@ -48,19 +51,11 @@ fun Route.authRoutes(
                 if (userId != null) {
                     call.respond(mapOf("valid" to true, "userId" to userId))
                 } else {
-                    call.respond(HttpStatusCode.Unauthorized, mapOf("valid" to false, "error" to "Token inválido"))
+                    call.respond(HttpStatusCode.Unauthorized, mapOf<String, String>("valid" to "false", "error" to "Token inválido"))
                 }
             } else {
-                call.respond(HttpStatusCode.Unauthorized, mapOf("valid" to false, "error" to "No autenticado"))
+                call.respond(HttpStatusCode.Unauthorized, mapOf<String, String>("valid" to "false", "error" to "No autenticado"))
             }
         }
     }
 }
-
-@Serializable
-data class LoginRequest(
-    val username: String,
-    val password: String,
-    val captchaResult: Int,
-    val expectedResult: Int
-)

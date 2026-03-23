@@ -1,26 +1,10 @@
 class LoginApp {
     constructor() {
-        this.captchaResult = null;
-        this.expectedResult = null;
         this.init();
     }
 
-    async init() {
-        await this.loadCaptcha();
+    init() {
         this.bindEvents();
-    }
-
-    async loadCaptcha() {
-        try {
-            const response = await fetch('/api/auth/captcha');
-            const captcha = await response.json();
-            this.expectedResult = captcha.result;
-            document.getElementById('captchaQuestion').textContent = captcha.question;
-            document.getElementById('captchaInput').value = '';
-        } catch (error) {
-            console.error('Error loading captcha:', error);
-            this.showError('Error al cargar el captcha');
-        }
     }
 
     bindEvents() {
@@ -29,39 +13,35 @@ class LoginApp {
             e.preventDefault();
             await this.handleLogin();
         });
-
-        const refreshCaptcha = document.getElementById('refreshCaptcha');
-        if (refreshCaptcha) {
-            refreshCaptcha.addEventListener('click', () => this.loadCaptcha());
-        }
     }
 
     async handleLogin() {
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
-        const captchaResult = parseInt(document.getElementById('captchaInput').value);
+
+        // ✅ Obtener token de reCAPTCHA
+        const recaptchaToken = grecaptcha.getResponse();
 
         if (!username || !password) {
             this.showError('Por favor complete todos los campos');
             return;
         }
 
-        if (isNaN(captchaResult)) {
-            this.showError('Por favor ingrese el resultado del captcha');
+        if (!recaptchaToken) {
+            document.getElementById('captchaError').style.display = 'block';
             return;
         }
+
+        document.getElementById('captchaError').style.display = 'none';
 
         try {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: username,
-                    password: password,
-                    captchaResult: captchaResult,
-                    expectedResult: this.expectedResult
+                    username,
+                    password,
+                    recaptchaToken  // ✅ enviar token de Google
                 })
             });
 
@@ -73,12 +53,12 @@ class LoginApp {
             } else {
                 const error = await response.json();
                 this.showError(error.error || 'Error al iniciar sesión');
-                await this.loadCaptcha();
+                grecaptcha.reset(); // ✅ resetear reCAPTCHA tras error
             }
         } catch (error) {
             console.error('Error:', error);
             this.showError('Error de conexión con el servidor');
-            await this.loadCaptcha();
+            grecaptcha.reset();
         }
     }
 
@@ -92,7 +72,6 @@ class LoginApp {
     }
 }
 
-// Inicializar la aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     new LoginApp();
 });
