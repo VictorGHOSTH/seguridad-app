@@ -17,11 +17,12 @@ class JwtService {
         .withIssuer(issuer)
         .build()
 
-    fun generateToken(userId: Int, username: String, perfilId: Int): String {
+    fun generateToken(userId: Int, username: String, perfilId: Int, esAdministrador: Boolean): String {
         return JWT.create()
             .withSubject(username)
             .withClaim("userId", userId)
             .withClaim("perfilId", perfilId)
+            .withClaim("esAdministrador", esAdministrador) // ✅ nuevo claim
             .withIssuer(issuer)
             .withIssuedAt(Date())
             .withExpiresAt(Date(System.currentTimeMillis() + expirationTime))

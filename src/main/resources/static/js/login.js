@@ -72,6 +72,15 @@ class LoginApp {
     }
 }
 
+if (response.ok) {
+    const data = await response.json();
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('usuario', JSON.stringify(data.usuario));
+    localStorage.setItem('esAdministrador', data.esAdministrador);
+    localStorage.setItem('permisos', JSON.stringify(data.permisos)); // ✅
+    window.location.href = '/dashboard';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     new LoginApp();
 });

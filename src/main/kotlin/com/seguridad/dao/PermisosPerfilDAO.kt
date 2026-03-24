@@ -75,6 +75,22 @@ class PermisosPerfilDAO {
         }
     }
 
+    fun getAllModulosComoPermisos(): List<PermisoConModulo> {
+        return transaction {
+            Modulos.selectAll().map { row ->
+                PermisoConModulo(
+                    idModulo = row[Modulos.id],
+                    strNombreModulo = row[Modulos.strNombreModulo],
+                    bitAgregar = true,
+                    bitEditar = true,
+                    bitConsulta = true,
+                    bitEliminar = true,
+                    bitDetalle = true
+                )
+            }
+        }
+    }
+
     private fun mapToPermisos(row: ResultRow): PermisosPerfil {
         return PermisosPerfil(
             id = row[PermisosPerfiles.id],
@@ -86,5 +102,27 @@ class PermisosPerfilDAO {
             bitEliminar = row[PermisosPerfiles.bitEliminar],
             bitDetalle = row[PermisosPerfiles.bitDetalle]
         )
+    }
+
+    fun getPermisosByPerfilConModulo(perfilId: Int): List<PermisoConModulo> {
+        return transaction {
+            PermisosPerfiles.selectAll()
+                .where { PermisosPerfiles.idPerfil eq perfilId }
+                .mapNotNull { row ->
+                    val modulo = Modulos.selectAll()
+                        .where { Modulos.id eq row[PermisosPerfiles.idModulo] }
+                        .singleOrNull() ?: return@mapNotNull null
+
+                    PermisoConModulo(
+                        idModulo = row[PermisosPerfiles.idModulo],
+                        strNombreModulo = modulo[Modulos.strNombreModulo],
+                        bitAgregar = row[PermisosPerfiles.bitAgregar],
+                        bitEditar = row[PermisosPerfiles.bitEditar],
+                        bitConsulta = row[PermisosPerfiles.bitConsulta],
+                        bitEliminar = row[PermisosPerfiles.bitEliminar],
+                        bitDetalle = row[PermisosPerfiles.bitDetalle]
+                    )
+                }
+        }
     }
 }

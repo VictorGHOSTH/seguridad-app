@@ -2,172 +2,102 @@ class DashboardApp {
     constructor() {
         this.token = localStorage.getItem('token');
         this.usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        this.esAdministrador = localStorage.getItem('esAdministrador') === 'true';
+        this.permisos = JSON.parse(localStorage.getItem('permisos') || '[]'); // ✅
         this.currentModule = null;
         this.init();
     }
 
-    async init() {
-        if (!this.token) {
-            window.location.href = '/login';
-            return;
-        }
-
-        await this.verifyToken();
-        this.loadUserInfo();
-        await this.loadMenus();
-        this.bindEvents();
-    }
-
-    async verifyToken() {
-        try {
-            const response = await fetch('/api/auth/verify', {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Token inválido');
-            }
-        } catch (error) {
-            console.error('Error verifying token:', error);
-            localStorage.removeItem('token');
-            localStorage.removeItem('usuario');
-            window.location.href = '/login';
-        }
+    // ✅ Nuevo método para verificar permisos
+    getPermisoModulo(nombreModulo) {
+        return this.permisos.find(p => p.strNombreModulo === nombreModulo) || null;
     }
 
     async loadMenus() {
         try {
             const response = await fetch('/api/menus', {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                headers: { 'Authorization': `Bearer ${this.token}` }
             });
 
             if (response.ok) {
                 const menus = await response.json();
-                this.renderMenus(menus);
-            } else {
-                console.error('Error loading menus');
+                // ✅ Filtrar menús según permisos
+                const menusFiltrados = this.filtrarMenusPorPermisos(menus);
+                this.renderMenus(menusFiltrados);
             }
         } catch (error) {
             console.error('Error loading menus:', error);
         }
     }
 
-    renderMenus(menus) {
-        const menuContainer = document.getElementById('menusContainer');
-        menuContainer.innerHTML = '';
+    // ✅ Filtrar menús — solo mostrar módulos con permisos
+    filtrarMenusPorPermisos(menus) {
+        if (this.esAdministrador) return menus;
 
-        menus.forEach(menu => {
-            const menuItem = this.createMenuItem(menu);
-            menuContainer.appendChild(menuItem);
-        });
-    }
-
-    createMenuItem(menu) {
-        const li = document.createElement('li');
-        li.className = 'nav-item dropdown';
-
-        const a = document.createElement('a');
-        a.className = 'nav-link dropdown-toggle';
-        a.href = '#';
-        a.setAttribute('data-bs-toggle', 'dropdown');
-        a.textContent = menu.strNombreMenu;
-
-        const ul = document.createElement('ul');
-        ul.className = 'dropdown-menu';
-
-        if (menu.modulos && menu.modulos.length > 0) {
-            menu.modulos.forEach(modulo => {
-                const subItem = document.createElement('li');
-                const subLink = document.createElement('a');
-                subLink.className = 'dropdown-item';
-                subLink.href = '#';
-                subLink.textContent = modulo.strNombreModulo;
-                subLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    this.loadModule(modulo);
-                });
-                subItem.appendChild(subLink);
-                ul.appendChild(subItem);
-            });
-        } else {
-            const emptyItem = document.createElement('li');
-            const emptyLink = document.createElement('a');
-            emptyLink.className = 'dropdown-item disabled';
-            emptyLink.href = '#';
-            emptyLink.textContent = 'No hay módulos';
-            emptyItem.appendChild(emptyLink);
-            ul.appendChild(emptyItem);
-        }
-
-        li.appendChild(a);
-        li.appendChild(ul);
-        return li;
+        return menus.map(menu => ({
+            ...menu,
+            modulos: menu.modulos.filter(modulo =>
+                this.permisos.some(p => p.strNombreModulo === modulo.strNombreModulo)
+            )
+        })).filter(menu => menu.modulos.length > 0);
     }
 
     async loadModule(modulo) {
         this.currentModule = modulo;
         this.updateBreadcrumbs(modulo);
 
-        const contentContainer = document.getElementById('contentContainer');
-        contentContainer.innerHTML = '<div class="text-center"><div class="loader"></div><p>Cargando módulo...</p></div>';
+        const permiso = this.getPermisoModulo(modulo.strNombreModulo);
 
+        // ✅ Pasar permisos al cargar el módulo
         const modulesWithCrud = ['Perfil', 'Módulo', 'Permisos-Perfil', 'Usuario'];
-
         if (modulesWithCrud.includes(modulo.strNombreModulo)) {
-            await this.loadCrudModule(modulo.strNombreModulo);
+            await this.loadCrudModule(modulo.strNombreModulo, permiso);
         } else {
-            this.loadStaticModule(modulo.strNombreModulo);
+            this.loadStaticModule(modulo.strNombreModulo, permiso);
         }
     }
 
-    async loadCrudModule(moduleName) {
+    async loadCrudModule(moduleName, permiso) {
         try {
-            // ✅ fix: nombre de archivo correcto para Permisos-Perfil
-            const moduleFileName = moduleName.toLowerCase().replace('ó', 'o').replace('-perfil', 'perfil').replace(' ', '');
             const fileMap = {
                 'Perfil': 'perfil',
                 'Módulo': 'modulo',
                 'Permisos-Perfil': 'permisos-perfil',
                 'Usuario': 'usuario'
             };
-            const fileName = fileMap[moduleName] || moduleName.toLowerCase();
+            const fileName = fileMap[moduleName];
             const response = await fetch(`/templates/${fileName}.html`);
 
             if (response.ok) {
                 const html = await response.text();
                 document.getElementById('contentContainer').innerHTML = html;
 
-                // ✅ fix: siempre instanciar, no verificar window.X
                 setTimeout(() => {
+                    // ✅ Pasar permisos a cada módulo
+                    const permisoEfectivo = this.esAdministrador ? {
+                        bitAgregar: true, bitEditar: true, bitConsulta: true,
+                        bitEliminar: true, bitDetalle: true
+                    } : permiso;
+
                     switch(moduleName) {
                         case 'Perfil':
-                            window.perfilModule = new PerfilModule(this.token);
+                            window.perfilModule = new PerfilModule(this.token, permisoEfectivo);
                             break;
                         case 'Usuario':
-                            window.usuarioModule = new UsuarioModule(this.token);
+                            window.usuarioModule = new UsuarioModule(this.token, permisoEfectivo);
                             break;
                         case 'Módulo':
-                            window.moduloModule = new ModuloModule(this.token);
+                            window.moduloModule = new ModuloModule(this.token, permisoEfectivo);
                             break;
                         case 'Permisos-Perfil':
-                            window.permisosPerfilModule = new PermisosPerfilModule(this.token);
+                            window.permisosPerfilModule = new PermisosPerfilModule(this.token, permisoEfectivo);
                             break;
                     }
                 }, 100);
-            } else {
-                throw new Error('Error loading template');
             }
         } catch (error) {
-            console.error('Error loading CRUD module:', error);
-            document.getElementById('contentContainer').innerHTML = `
-                <div class="alert alert-danger">
-                    Error al cargar el módulo ${moduleName}
-                </div>
-            `;
+            document.getElementById('contentContainer').innerHTML =
+                `<div class="alert alert-danger">Error al cargar el módulo ${moduleName}</div>`;
         }
     }
 

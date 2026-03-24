@@ -23,7 +23,6 @@ fun Application.configureRouting(
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             cause.printStackTrace()
-            // ✅ Encodear el mensaje para evitar caracteres ilegales en el header
             val message = java.net.URLEncoder.encode(cause.message ?: "Error interno", "UTF-8")
             call.response.headers.append(HttpHeaders.Location, "/error?code=500&message=$message")
             call.respond(HttpStatusCode.Found, "")
@@ -43,66 +42,45 @@ fun Application.configureRouting(
 
     routing {
         staticResources("/static", "static")
-        //staticResources("/css", "static/css")
-        //staticResources("/js", "static/js")
-        //staticResources("/uploads", "static/uploads")
 
-        get("/") {
-            call.respondRedirect("/login")
-        }
+        get("/") { call.respondRedirect("/login") }
 
-        // ✅ Leer templates desde classpath en lugar de File()
-        get("/login") {
-            val content = Thread.currentThread()
-                .contextClassLoader
-                .getResourceAsStream("templates/login.html")
-                ?.readBytes()
-                ?.toString(Charsets.UTF_8)
-                ?: "Login no encontrado"
-            call.respondText(content, ContentType.Text.Html)
-        }
-
-        get("/dashboard") {
-            val content = Thread.currentThread()
-                .contextClassLoader
-                .getResourceAsStream("templates/dashboard.html")
-                ?.readBytes()
-                ?.toString(Charsets.UTF_8)
-                ?: "Dashboard no encontrado"
-            call.respondText(content, ContentType.Text.Html)
-        }
-
-        get("/error") {
-            val content = Thread.currentThread()
-                .contextClassLoader
-                .getResourceAsStream("templates/error.html")
-                ?.readBytes()
-                ?.toString(Charsets.UTF_8)
-                ?: "Error no encontrado"
-            call.respondText(content, ContentType.Text.Html)
-        }
+        // ✅ Función helper para evitar repetición
+        get("/login")     { respondTemplate(call, "login.html") }
+        get("/dashboard") { respondTemplate(call, "dashboard.html") }
+        get("/error")     { respondTemplate(call, "error.html") }
 
         get("/templates/{name}") {
             val name = call.parameters["name"]
             if (name != null) {
-                val content = Thread.currentThread()
-                    .contextClassLoader
-                    .getResourceAsStream("templates/$name")
-                    ?.readBytes()
-                    ?.toString(Charsets.UTF_8)
-                if (content != null) {
-                    call.respondText(content, ContentType.Text.Html)
-                } else {
-                    call.respond(HttpStatusCode.NotFound)
-                }
+                respondTemplate(call, name)
             }
         }
 
-        authRoutes(jwtService, captchaService, usuarioDAO)
+        // ✅ authRoutes ahora recibe perfilDAO y permisosPerfilDAO
+        authRoutes(jwtService, captchaService, usuarioDAO, perfilDAO, permisosPerfilDAO)
         perfilRoutes(perfilDAO)
         usuarioRoutes(usuarioDAO)
         moduloRoutes(moduloDAO)
         permisosPerfilRoutes(permisosPerfilDAO)
         menuRoutes()
+    }
+}
+
+// ✅ Helper para leer templates desde classpath
+private suspend fun respondTemplate(
+    call: io.ktor.server.application.ApplicationCall,
+    templateName: String
+) {
+    val content = Thread.currentThread()
+        .contextClassLoader
+        .getResourceAsStream("templates/$templateName")
+        ?.readBytes()
+        ?.toString(Charsets.UTF_8)
+
+    if (content != null) {
+        call.respondText(content, ContentType.Text.Html)
+    } else {
+        call.respond(HttpStatusCode.NotFound, "Template $templateName no encontrado")
     }
 }

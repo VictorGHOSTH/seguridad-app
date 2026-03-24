@@ -52,6 +52,17 @@ data class MenuModulo(
     val idModulo: Int
 )
 
+@Serializable
+data class PermisoConModulo(
+    val idModulo: Int,
+    val strNombreModulo: String,
+    val bitAgregar: Boolean,
+    val bitEditar: Boolean,
+    val bitConsulta: Boolean,
+    val bitEliminar: Boolean,
+    val bitDetalle: Boolean
+)
+
 // Tablas de la base de datos
 object Perfiles : Table("perfiles") {
     val id = integer("id").autoIncrement()

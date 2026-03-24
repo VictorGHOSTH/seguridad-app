@@ -1,6 +1,7 @@
 class PerfilModule {
-    constructor(token) {
+    constructor(token, permisos = {}) {
         this.token = token;
+        this.permisos = permisos; // ✅ recibir permisos
         this.currentPage = 1;
         this.pageSize = 5;
         this.init();
@@ -9,14 +10,21 @@ class PerfilModule {
     async init() {
         await this.loadPerfiles();
         this.bindEvents();
+        this.aplicarPermisos(); // ✅ ocultar botones según permisos
+    }
+
+    // ✅ Ocultar botón "Nuevo" si no tiene permiso de agregar
+    aplicarPermisos() {
+        const btnNuevo = document.getElementById('btnNuevoPerfil');
+        if (btnNuevo && !this.permisos.bitAgregar) {
+            btnNuevo.style.display = 'none';
+        }
     }
 
     async loadPerfiles() {
         try {
             const response = await fetch(`/api/perfiles?page=${this.currentPage}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                headers: { 'Authorization': `Bearer ${this.token}` }
             });
 
             if (response.ok) {
@@ -24,11 +32,9 @@ class PerfilModule {
                 this.renderTable(data.data);
                 this.renderPagination(data.total, data.page, data.pageSize);
             } else {
-                console.error('Error loading perfiles');
                 this.showError('Error al cargar los perfiles');
             }
         } catch (error) {
-            console.error('Error:', error);
             this.showError('Error de conexión');
         }
     }
@@ -52,16 +58,19 @@ class PerfilModule {
                     </span>
                 </td>
                 <td>
-                    <div class="btn-group" role="group">
-                        <button class="btn btn-sm btn-info" onclick="window.perfilModule.viewDetail(${perfil.id})" title="Ver detalle">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-warning" onclick="window.perfilModule.editPerfil(${perfil.id})" title="Editar">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="window.perfilModule.deletePerfil(${perfil.id})" title="Eliminar">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                    <div class="btn-group">
+                        ${this.permisos.bitDetalle !== false ? `
+                            <button class="btn btn-sm btn-info" onclick="window.perfilModule.viewDetail(${perfil.id})" title="Ver detalle">
+                                <i class="fas fa-eye"></i>
+                            </button>` : ''}
+                        ${this.permisos.bitEditar !== false ? `
+                            <button class="btn btn-sm btn-warning" onclick="window.perfilModule.editPerfil(${perfil.id})" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>` : ''}
+                        ${this.permisos.bitEliminar !== false ? `
+                            <button class="btn btn-sm btn-danger" onclick="window.perfilModule.deletePerfil(${perfil.id})" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>` : ''}
                     </div>
                 </td>
             </tr>
@@ -78,9 +87,7 @@ class PerfilModule {
             return;
         }
 
-        let paginationHtml = '';
-
-        paginationHtml += `
+        let paginationHtml = `
             <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
                 <a class="page-link" href="#" onclick="window.perfilModule.changePage(${currentPage - 1}); return false;">Anterior</a>
             </li>
@@ -98,8 +105,7 @@ class PerfilModule {
             paginationHtml += `
                 <li class="page-item ${i === currentPage ? 'active' : ''}">
                     <a class="page-link" href="#" onclick="window.perfilModule.changePage(${i}); return false;">${i}</a>
-                </li>
-            `;
+                </li>`;
         }
 
         if (endPage < totalPages) {
@@ -110,8 +116,7 @@ class PerfilModule {
         paginationHtml += `
             <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
                 <a class="page-link" href="#" onclick="window.perfilModule.changePage(${currentPage + 1}); return false;">Siguiente</a>
-            </li>
-        `;
+            </li>`;
 
         paginationContainer.innerHTML = paginationHtml;
     }
@@ -126,17 +131,13 @@ class PerfilModule {
         document.getElementById('perfilId').value = '';
         document.getElementById('perfilNombre').value = '';
         document.getElementById('perfilAdministrador').checked = false;
-
-        const modal = new bootstrap.Modal(document.getElementById('perfilModal'));
-        modal.show();
+        new bootstrap.Modal(document.getElementById('perfilModal')).show();
     }
 
     async editPerfil(id) {
         try {
             const response = await fetch(`/api/perfiles/${id}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                headers: { 'Authorization': `Bearer ${this.token}` }
             });
 
             if (response.ok) {
@@ -145,14 +146,11 @@ class PerfilModule {
                 document.getElementById('perfilId').value = perfil.id;
                 document.getElementById('perfilNombre').value = perfil.strNombrePerfil;
                 document.getElementById('perfilAdministrador').checked = perfil.bitAdministrador;
-
-                const modal = new bootstrap.Modal(document.getElementById('perfilModal'));
-                modal.show();
+                new bootstrap.Modal(document.getElementById('perfilModal')).show();
             } else {
                 this.showError('Error al cargar el perfil');
             }
         } catch (error) {
-            console.error('Error:', error);
             this.showError('Error al cargar el perfil');
         }
     }
@@ -171,26 +169,16 @@ class PerfilModule {
         }
 
         try {
-            let response;
-            if (id) {
-                response = await fetch(`/api/perfiles/${id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${this.token}`
-                    },
-                    body: JSON.stringify(perfil)
-                });
-            } else {
-                response = await fetch('/api/perfiles', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${this.token}`
-                    },
-                    body: JSON.stringify(perfil)
-                });
-            }
+            const url = id ? `/api/perfiles/${id}` : '/api/perfiles';
+            const method = id ? 'PUT' : 'POST';
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify(perfil)
+            });
 
             if (response.ok) {
                 bootstrap.Modal.getInstance(document.getElementById('perfilModal')).hide();
@@ -201,19 +189,16 @@ class PerfilModule {
                 this.showError(error.error || 'Error al guardar el perfil');
             }
         } catch (error) {
-            console.error('Error:', error);
             this.showError('Error al guardar el perfil');
         }
     }
 
     async deletePerfil(id) {
-        if (confirm('¿Está seguro de eliminar este perfil? Esta acción no se puede deshacer.')) {
+        if (confirm('¿Está seguro de eliminar este perfil?')) {
             try {
                 const response = await fetch(`/api/perfiles/${id}`, {
                     method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${this.token}`
-                    }
+                    headers: { 'Authorization': `Bearer ${this.token}` }
                 });
 
                 if (response.ok) {
@@ -224,7 +209,6 @@ class PerfilModule {
                     this.showError(error.error || 'Error al eliminar el perfil');
                 }
             } catch (error) {
-                console.error('Error:', error);
                 this.showError('Error al eliminar el perfil');
             }
         }
@@ -233,9 +217,7 @@ class PerfilModule {
     async viewDetail(id) {
         try {
             const response = await fetch(`/api/perfiles/${id}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                headers: { 'Authorization': `Bearer ${this.token}` }
             });
 
             if (response.ok) {
@@ -243,14 +225,11 @@ class PerfilModule {
                 document.getElementById('detailId').textContent = perfil.id;
                 document.getElementById('detailNombre').textContent = perfil.strNombrePerfil;
                 document.getElementById('detailAdministrador').textContent = perfil.bitAdministrador ? 'Sí' : 'No';
-
-                const modal = new bootstrap.Modal(document.getElementById('perfilDetailModal'));
-                modal.show();
+                new bootstrap.Modal(document.getElementById('perfilDetailModal')).show();
             } else {
                 this.showError('Error al cargar el detalle del perfil');
             }
         } catch (error) {
-            console.error('Error:', error);
             this.showError('Error al cargar el detalle del perfil');
         }
     }
@@ -277,5 +256,4 @@ class PerfilModule {
     }
 }
 
-// Variable global
 window.perfilModule = null;
