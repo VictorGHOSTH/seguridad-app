@@ -1,5 +1,7 @@
 package com.seguridad.dao
 
+import com.seguridad.models.Modulos
+import com.seguridad.models.PermisoConModulo
 import com.seguridad.models.PermisosPerfil
 import com.seguridad.models.PermisosPerfiles
 import org.jetbrains.exposed.sql.*
@@ -75,6 +77,7 @@ class PermisosPerfilDAO {
         }
     }
 
+    // ✅ Para administrador — todos los módulos con permisos completos
     fun getAllModulosComoPermisos(): List<PermisoConModulo> {
         return transaction {
             Modulos.selectAll().map { row ->
@@ -91,19 +94,7 @@ class PermisosPerfilDAO {
         }
     }
 
-    private fun mapToPermisos(row: ResultRow): PermisosPerfil {
-        return PermisosPerfil(
-            id = row[PermisosPerfiles.id],
-            idModulo = row[PermisosPerfiles.idModulo],
-            idPerfil = row[PermisosPerfiles.idPerfil],
-            bitAgregar = row[PermisosPerfiles.bitAgregar],
-            bitEditar = row[PermisosPerfiles.bitEditar],
-            bitConsulta = row[PermisosPerfiles.bitConsulta],
-            bitEliminar = row[PermisosPerfiles.bitEliminar],
-            bitDetalle = row[PermisosPerfiles.bitDetalle]
-        )
-    }
-
+    // ✅ Para usuario normal — solo sus permisos asignados con nombre del módulo
     fun getPermisosByPerfilConModulo(perfilId: Int): List<PermisoConModulo> {
         return transaction {
             PermisosPerfiles.selectAll()
@@ -124,5 +115,18 @@ class PermisosPerfilDAO {
                     )
                 }
         }
+    }
+
+    private fun mapToPermisos(row: ResultRow): PermisosPerfil {
+        return PermisosPerfil(
+            id = row[PermisosPerfiles.id],
+            idModulo = row[PermisosPerfiles.idModulo],
+            idPerfil = row[PermisosPerfiles.idPerfil],
+            bitAgregar = row[PermisosPerfiles.bitAgregar],
+            bitEditar = row[PermisosPerfiles.bitEditar],
+            bitConsulta = row[PermisosPerfiles.bitConsulta],
+            bitEliminar = row[PermisosPerfiles.bitEliminar],
+            bitDetalle = row[PermisosPerfiles.bitDetalle]
+        )
     }
 }
