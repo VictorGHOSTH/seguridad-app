@@ -11,6 +11,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
+import com.seguridad.models.Usuario
 
 @Serializable
 data class LoginRequest(
@@ -38,11 +39,16 @@ fun Route.authRoutes(
 
             if (usuario != null) {
                 val token = jwtService.generateToken(usuario.id, usuario.strNombreUsuario, usuario.idPerfil)
-                call.respond(mapOf("token" to token, "usuario" to usuario))
+                // ✅ Usar data class en lugar de mapOf
+                call.respond(LoginResponse(token = token, usuario = usuario))
             } else {
-                call.respond(HttpStatusCode.Unauthorized, mapOf<String, String>("error" to "Credenciales inválidas o usuario inactivo"))
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    mapOf<String, String>("error" to "Credenciales inválidas o usuario inactivo")
+                )
             }
         }
+
 
         get("/verify") {
             val principal = call.principal<JWTPrincipal>()
@@ -59,3 +65,9 @@ fun Route.authRoutes(
         }
     }
 }
+
+@Serializable
+data class LoginResponse(
+    val token: String,
+    val usuario: Usuario
+)

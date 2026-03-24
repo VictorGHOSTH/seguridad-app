@@ -23,7 +23,9 @@ fun Application.configureRouting(
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             cause.printStackTrace()
-            call.response.headers.append(HttpHeaders.Location, "/error?code=500&message=${cause.message}")
+            // ✅ Encodear el mensaje para evitar caracteres ilegales en el header
+            val message = java.net.URLEncoder.encode(cause.message ?: "Error interno", "UTF-8")
+            call.response.headers.append(HttpHeaders.Location, "/error?code=500&message=$message")
             call.respond(HttpStatusCode.Found, "")
         }
         status(HttpStatusCode.NotFound) { call, status ->
