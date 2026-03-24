@@ -18,7 +18,7 @@ class ModuloDAO {
 
     fun getModuloById(id: Int): Modulo? {
         return transaction {
-            Modulos.select { Modulos.id eq id }
+            Modulos.selectAll().where { Modulos.id eq id }
                 .map { mapToModulo(it) }
                 .singleOrNull()
         }

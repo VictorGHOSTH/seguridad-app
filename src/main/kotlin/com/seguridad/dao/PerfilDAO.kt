@@ -19,7 +19,7 @@ class PerfilDAO {
 
     fun getPerfilById(id: Int): Perfil? {
         return transaction {
-            Perfiles.select { Perfiles.id eq id }
+            Perfiles.selectAll().where { Perfiles.id eq id }
                 .map { mapToPerfil(it) }
                 .singleOrNull()
         }

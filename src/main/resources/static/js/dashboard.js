@@ -126,35 +126,35 @@ class DashboardApp {
 
     async loadCrudModule(moduleName) {
         try {
-            const moduleFileName = moduleName.toLowerCase().replace('-', '');
-            const response = await fetch(`/templates/${moduleFileName}.html`);
+            // ✅ fix: nombre de archivo correcto para Permisos-Perfil
+            const moduleFileName = moduleName.toLowerCase().replace('ó', 'o').replace('-perfil', 'perfil').replace(' ', '');
+            const fileMap = {
+                'Perfil': 'perfil',
+                'Módulo': 'modulo',
+                'Permisos-Perfil': 'permisos-perfil',
+                'Usuario': 'usuario'
+            };
+            const fileName = fileMap[moduleName] || moduleName.toLowerCase();
+            const response = await fetch(`/templates/${fileName}.html`);
 
             if (response.ok) {
                 const html = await response.text();
                 document.getElementById('contentContainer').innerHTML = html;
 
-                // Inicializar el módulo específico
+                // ✅ fix: siempre instanciar, no verificar window.X
                 setTimeout(() => {
                     switch(moduleName) {
                         case 'Perfil':
-                            if (window.perfilModule) {
-                                window.perfilModule = new PerfilModule(this.token);
-                            }
+                            window.perfilModule = new PerfilModule(this.token);
                             break;
                         case 'Usuario':
-                            if (window.usuarioModule) {
-                                window.usuarioModule = new UsuarioModule(this.token);
-                            }
+                            window.usuarioModule = new UsuarioModule(this.token);
                             break;
                         case 'Módulo':
-                            if (window.moduloModule) {
-                                window.moduloModule = new ModuloModule(this.token);
-                            }
+                            window.moduloModule = new ModuloModule(this.token);
                             break;
                         case 'Permisos-Perfil':
-                            if (window.permisosPerfilModule) {
-                                window.permisosPerfilModule = new PermisosPerfilModule(this.token);
-                            }
+                            window.permisosPerfilModule = new PermisosPerfilModule(this.token);
                             break;
                     }
                 }, 100);

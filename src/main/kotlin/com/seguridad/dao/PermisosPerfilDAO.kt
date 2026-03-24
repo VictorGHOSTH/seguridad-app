@@ -24,7 +24,7 @@ class PermisosPerfilDAO {
 
     fun getPermisosById(id: Int): PermisosPerfil? {
         return transaction {
-            PermisosPerfiles.select { PermisosPerfiles.id eq id }
+            PermisosPerfiles.selectAll().where { PermisosPerfiles.id eq id }
                 .map { mapToPermisos(it) }
                 .singleOrNull()
         }
@@ -70,7 +70,7 @@ class PermisosPerfilDAO {
 
     fun getPermisosByPerfil(perfilId: Int): List<PermisosPerfil> {
         return transaction {
-            PermisosPerfiles.select { PermisosPerfiles.idPerfil eq perfilId }
+            PermisosPerfiles.selectAll().where { PermisosPerfiles.idPerfil eq perfilId }
                 .map { mapToPermisos(it) }
         }
     }

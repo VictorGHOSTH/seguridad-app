@@ -3,11 +3,23 @@ package com.seguridad.routes
 import com.seguridad.dao.PerfilDAO
 import com.seguridad.models.Perfil
 import io.ktor.http.*
-import io.ktor.server.application.*
+import io.ktor.server.application.call
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class PaginatedPerfilesResponse(
+    val data: List<Perfil>,
+    val total: Int,
+    val page: Int,
+    val pageSize: Int
+)
+
+@Serializable
+data class CreatedPerfilResponse(val id: Int)
 
 fun Route.perfilRoutes(perfilDAO: PerfilDAO) {
     authenticate("auth-jwt") {
@@ -16,11 +28,11 @@ fun Route.perfilRoutes(perfilDAO: PerfilDAO) {
                 val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
                 val perfiles = perfilDAO.getAllPerfiles(page)
                 val total = perfilDAO.getTotalCount()
-                call.respond(mapOf(
-                    "data" to perfiles,
-                    "total" to total,
-                    "page" to page,
-                    "pageSize" to 5
+                call.respond(PaginatedPerfilesResponse(
+                    data = perfiles,
+                    total = total.toInt(),
+                    page = page,
+                    pageSize = 5
                 ))
             }
 
@@ -31,10 +43,10 @@ fun Route.perfilRoutes(perfilDAO: PerfilDAO) {
                     if (perfil != null) {
                         call.respond(perfil)
                     } else {
-                        call.respond(HttpStatusCode.NotFound, mapOf("error" to "Perfil no encontrado"))
+                        call.respond(HttpStatusCode.NotFound, mapOf<String, String>("error" to "Perfil no encontrado"))
                     }
                 } else {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "ID inválido"))
+                    call.respond(HttpStatusCode.BadRequest, mapOf<String, String>("error" to "ID inválido"))
                 }
             }
 
@@ -43,12 +55,12 @@ fun Route.perfilRoutes(perfilDAO: PerfilDAO) {
                     val perfil = call.receive<Perfil>()
                     val id = perfilDAO.createPerfil(perfil)
                     if (id != null) {
-                        call.respond(HttpStatusCode.Created, mapOf("id" to id))
+                        call.respond(HttpStatusCode.Created, CreatedPerfilResponse(id))
                     } else {
-                        call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Error al crear perfil"))
+                        call.respond(HttpStatusCode.InternalServerError, mapOf<String, String>("error" to "Error al crear perfil"))
                     }
                 } catch (e: Exception) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Error al procesar la solicitud: ${e.message}"))
+                    call.respond(HttpStatusCode.BadRequest, mapOf<String, String>("error" to "Error: ${e.message}"))
                 }
             }
 
@@ -59,15 +71,15 @@ fun Route.perfilRoutes(perfilDAO: PerfilDAO) {
                         val perfil = call.receive<Perfil>()
                         val updated = perfilDAO.updatePerfil(id, perfil)
                         if (updated) {
-                            call.respond(HttpStatusCode.OK, mapOf("message" to "Perfil actualizado"))
+                            call.respond(HttpStatusCode.OK, mapOf<String, String>("message" to "Perfil actualizado"))
                         } else {
-                            call.respond(HttpStatusCode.NotFound, mapOf("error" to "Perfil no encontrado"))
+                            call.respond(HttpStatusCode.NotFound, mapOf<String, String>("error" to "Perfil no encontrado"))
                         }
                     } catch (e: Exception) {
-                        call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Error al procesar la solicitud: ${e.message}"))
+                        call.respond(HttpStatusCode.BadRequest, mapOf<String, String>("error" to "Error: ${e.message}"))
                     }
                 } else {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "ID inválido"))
+                    call.respond(HttpStatusCode.BadRequest, mapOf<String, String>("error" to "ID inválido"))
                 }
             }
 
@@ -76,12 +88,12 @@ fun Route.perfilRoutes(perfilDAO: PerfilDAO) {
                 if (id != null) {
                     val deleted = perfilDAO.deletePerfil(id)
                     if (deleted) {
-                        call.respond(HttpStatusCode.OK, mapOf("message" to "Perfil eliminado"))
+                        call.respond(HttpStatusCode.OK, mapOf<String, String>("message" to "Perfil eliminado"))
                     } else {
-                        call.respond(HttpStatusCode.NotFound, mapOf("error" to "Perfil no encontrado"))
+                        call.respond(HttpStatusCode.NotFound, mapOf<String, String>("error" to "Perfil no encontrado"))
                     }
                 } else {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "ID inválido"))
+                    call.respond(HttpStatusCode.BadRequest, mapOf<String, String>("error" to "ID inválido"))
                 }
             }
         }
