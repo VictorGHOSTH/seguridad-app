@@ -3,12 +3,39 @@ class DashboardApp {
         this.token = localStorage.getItem('token');
         this.usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
         this.esAdministrador = localStorage.getItem('esAdministrador') === 'true';
-        this.permisos = JSON.parse(localStorage.getItem('permisos') || '[]'); // ✅
+        this.permisos = JSON.parse(localStorage.getItem('permisos') || '[]');
         this.currentModule = null;
         this.init();
     }
 
-    // ✅ Nuevo método para verificar permisos
+    // ✅ Método init que faltaba
+    async init() {
+        if (!this.token) {
+            window.location.href = '/login';
+            return;
+        }
+        await this.verifyToken();
+        this.loadUserInfo();
+        await this.loadMenus();
+        this.bindEvents();
+    }
+
+    // ✅ Método verifyToken que faltaba
+    async verifyToken() {
+        try {
+            const response = await fetch('/api/auth/verify', {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            if (!response.ok) throw new Error('Token inválido');
+        } catch (error) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+            localStorage.removeItem('esAdministrador');
+            localStorage.removeItem('permisos');
+            window.location.href = '/login';
+        }
+    }
+
     getPermisoModulo(nombreModulo) {
         return this.permisos.find(p => p.strNombreModulo === nombreModulo) || null;
     }
@@ -18,10 +45,8 @@ class DashboardApp {
             const response = await fetch('/api/menus', {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
-
             if (response.ok) {
                 const menus = await response.json();
-                // ✅ Filtrar menús según permisos
                 const menusFiltrados = this.filtrarMenusPorPermisos(menus);
                 this.renderMenus(menusFiltrados);
             }
@@ -30,10 +55,8 @@ class DashboardApp {
         }
     }
 
-    // ✅ Filtrar menús — solo mostrar módulos con permisos
     filtrarMenusPorPermisos(menus) {
         if (this.esAdministrador) return menus;
-
         return menus.map(menu => ({
             ...menu,
             modulos: menu.modulos.filter(modulo =>
@@ -42,14 +65,67 @@ class DashboardApp {
         })).filter(menu => menu.modulos.length > 0);
     }
 
+    // ✅ Método renderMenus que faltaba
+    renderMenus(menus) {
+        const menuContainer = document.getElementById('menusContainer');
+        if (!menuContainer) return;
+        menuContainer.innerHTML = '';
+        menus.forEach(menu => {
+            const menuItem = this.createMenuItem(menu);
+            menuContainer.appendChild(menuItem);
+        });
+    }
+
+    // ✅ Método createMenuItem que faltaba
+    createMenuItem(menu) {
+        const li = document.createElement('li');
+        li.className = 'nav-item dropdown';
+
+        const a = document.createElement('a');
+        a.className = 'nav-link dropdown-toggle';
+        a.href = '#';
+        a.setAttribute('data-bs-toggle', 'dropdown');
+        a.textContent = menu.strNombreMenu;
+
+        const ul = document.createElement('ul');
+        ul.className = 'dropdown-menu';
+
+        if (menu.modulos && menu.modulos.length > 0) {
+            menu.modulos.forEach(modulo => {
+                const subItem = document.createElement('li');
+                const subLink = document.createElement('a');
+                subLink.className = 'dropdown-item';
+                subLink.href = '#';
+                subLink.textContent = modulo.strNombreModulo;
+                subLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.loadModule(modulo);
+                });
+                subItem.appendChild(subLink);
+                ul.appendChild(subItem);
+            });
+        } else {
+            const emptyItem = document.createElement('li');
+            const emptyLink = document.createElement('a');
+            emptyLink.className = 'dropdown-item disabled';
+            emptyLink.href = '#';
+            emptyLink.textContent = 'No hay módulos';
+            emptyItem.appendChild(emptyLink);
+            ul.appendChild(emptyItem);
+        }
+
+        li.appendChild(a);
+        li.appendChild(ul);
+        return li;
+    }
+
     async loadModule(modulo) {
         this.currentModule = modulo;
         this.updateBreadcrumbs(modulo);
 
         const permiso = this.getPermisoModulo(modulo.strNombreModulo);
-
-        // ✅ Pasar permisos al cargar el módulo
         const modulesWithCrud = ['Perfil', 'Módulo', 'Permisos-Perfil', 'Usuario'];
+
         if (modulesWithCrud.includes(modulo.strNombreModulo)) {
             await this.loadCrudModule(modulo.strNombreModulo, permiso);
         } else {
@@ -73,7 +149,6 @@ class DashboardApp {
                 document.getElementById('contentContainer').innerHTML = html;
 
                 setTimeout(() => {
-                    // ✅ Pasar permisos a cada módulo
                     const permisoEfectivo = this.esAdministrador ? {
                         bitAgregar: true, bitEditar: true, bitConsulta: true,
                         bitEliminar: true, bitDetalle: true
@@ -101,72 +176,48 @@ class DashboardApp {
         }
     }
 
-    loadStaticModule(moduleName) {
+    loadStaticModule(moduleName, permiso) {
+        const p = this.esAdministrador ? {
+            bitAgregar: true, bitEditar: true, bitConsulta: true,
+            bitEliminar: true, bitDetalle: true
+        } : (permiso || {});
+
         const contentContainer = document.getElementById('contentContainer');
         contentContainer.innerHTML = `
             <div class="card">
-                <div class="card-header">
-                    <h3>${moduleName}</h3>
-                </div>
+                <div class="card-header"><h3>${moduleName}</h3></div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <button class="btn btn-primary" onclick="alert('Funcionalidad de agregar - Módulo estático')">
-                            <i class="fas fa-plus"></i> Agregar
-                        </button>
-                        <button class="btn btn-warning" onclick="alert('Funcionalidad de editar - Módulo estático')">
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                        <button class="btn btn-danger" onclick="alert('Funcionalidad de eliminar - Módulo estático')">
-                            <i class="fas fa-trash"></i> Eliminar
-                        </button>
-                        <button class="btn btn-info" onclick="alert('Funcionalidad de consultar - Módulo estático')">
-                            <i class="fas fa-search"></i> Consultar
-                        </button>
-                        <button class="btn btn-secondary" onclick="alert('Funcionalidad de detalle - Módulo estático')">
-                            <i class="fas fa-info-circle"></i> Detalle
-                        </button>
+                        ${p.bitAgregar ? `<button class="btn btn-primary me-1" onclick="alert('Agregar')"><i class="fas fa-plus"></i> Agregar</button>` : ''}
+                        ${p.bitEditar ? `<button class="btn btn-warning me-1" onclick="alert('Editar')"><i class="fas fa-edit"></i> Editar</button>` : ''}
+                        ${p.bitEliminar ? `<button class="btn btn-danger me-1" onclick="alert('Eliminar')"><i class="fas fa-trash"></i> Eliminar</button>` : ''}
+                        ${p.bitConsulta ? `<button class="btn btn-info me-1" onclick="alert('Consultar')"><i class="fas fa-search"></i> Consultar</button>` : ''}
+                        ${p.bitDetalle ? `<button class="btn btn-secondary me-1" onclick="alert('Detalle')"><i class="fas fa-info-circle"></i> Detalle</button>` : ''}
                     </div>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> Este es un módulo estático. Los botones de CRUD no tienen funcionalidad real.
-                    </div>
+                    <div class="alert alert-info">Módulo estático — sin funcionalidad real.</div>
                     <div class="table-container">
                         <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>ID</th><th>Nombre</th><th>Descripción</th></tr></thead>
                             <tbody>
-                                <tr>
-                                    <td>1</td>
-                                    <td>Ejemplo 1</td>
-                                    <td>Datos de ejemplo para módulo estático</td>
-                                </tr>
-                                <tr>
-                                    <td>2</td>
-                                    <td>Ejemplo 2</td>
-                                    <td>Datos de ejemplo para módulo estático</td>
-                                </tr>
+                                <tr><td>1</td><td>Ejemplo 1</td><td>Datos de ejemplo</td></tr>
+                                <tr><td>2</td><td>Ejemplo 2</td><td>Datos de ejemplo</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
-        `;
+            </div>`;
     }
 
     updateBreadcrumbs(modulo) {
         const breadcrumbsContainer = document.getElementById('breadcrumbs');
+        if (!breadcrumbsContainer) return;
         breadcrumbsContainer.innerHTML = `
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="#" onclick="return false;">Inicio</a></li>
                     <li class="breadcrumb-item active" aria-current="page">${modulo.strNombreModulo}</li>
                 </ol>
-            </nav>
-        `;
+            </nav>`;
     }
 
     loadUserInfo() {
@@ -182,8 +233,7 @@ class DashboardApp {
                         <strong>${this.usuario.strNombreUsuario || 'Usuario'}</strong><br>
                         <small>${this.usuario.strCorreo || 'Sin correo'}</small>
                     </div>
-                </div>
-            `;
+                </div>`;
         }
     }
 
@@ -193,6 +243,8 @@ class DashboardApp {
             logoutBtn.addEventListener('click', () => {
                 localStorage.removeItem('token');
                 localStorage.removeItem('usuario');
+                localStorage.removeItem('esAdministrador');
+                localStorage.removeItem('permisos');
                 window.location.href = '/login';
             });
         }
@@ -207,7 +259,6 @@ class DashboardApp {
     }
 }
 
-// Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     window.dashboardApp = new DashboardApp();
 });
