@@ -18,8 +18,6 @@ class LoginApp {
     async handleLogin() {
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
-
-        // ✅ Obtener token de reCAPTCHA
         const recaptchaToken = grecaptcha.getResponse();
 
         if (!username || !password) {
@@ -38,22 +36,21 @@ class LoginApp {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username,
-                    password,
-                    recaptchaToken  // ✅ enviar token de Google
-                })
+                body: JSON.stringify({ username, password, recaptchaToken })
             });
 
             if (response.ok) {
                 const data = await response.json();
+                // ✅ Guardar todo incluyendo permisos
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('usuario', JSON.stringify(data.usuario));
+                localStorage.setItem('esAdministrador', data.esAdministrador);
+                localStorage.setItem('permisos', JSON.stringify(data.permisos));
                 window.location.href = '/dashboard';
             } else {
                 const error = await response.json();
                 this.showError(error.error || 'Error al iniciar sesión');
-                grecaptcha.reset(); // ✅ resetear reCAPTCHA tras error
+                grecaptcha.reset();
             }
         } catch (error) {
             console.error('Error:', error);
@@ -70,15 +67,6 @@ class LoginApp {
             errorDiv.style.display = 'none';
         }, 5000);
     }
-}
-
-if (response.ok) {
-    const data = await response.json();
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('usuario', JSON.stringify(data.usuario));
-    localStorage.setItem('esAdministrador', data.esAdministrador);
-    localStorage.setItem('permisos', JSON.stringify(data.permisos)); // ✅
-    window.location.href = '/dashboard';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
