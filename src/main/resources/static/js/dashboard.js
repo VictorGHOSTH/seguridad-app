@@ -79,16 +79,32 @@ class DashboardApp {
     // ✅ Método createMenuItem que faltaba
     createMenuItem(menu) {
         const li = document.createElement('li');
-        li.className = 'nav-item dropdown';
+        li.className = 'nav-item';
 
-        const a = document.createElement('a');
-        a.className = 'nav-link dropdown-toggle';
-        a.href = '#';
-        a.setAttribute('data-bs-toggle', 'dropdown');
-        a.textContent = menu.strNombreMenu;
+        // ✅ Icono por nombre de menú
+        const iconMap = {
+            'Seguridad': 'fa-lock',
+            'Principal 1': 'fa-layer-group',
+            'Principal 2': 'fa-th-large',
+        };
+        const icon = iconMap[menu.strNombreMenu] || 'fa-folder';
 
-        const ul = document.createElement('ul');
-        ul.className = 'dropdown-menu';
+        const toggleId = `menu-${menu.id}`;
+
+        li.innerHTML = `
+            <a class="nav-link dropdown-toggle"
+               href="#${toggleId}"
+               data-bs-toggle="collapse"
+               aria-expanded="false">
+                <i class="fas ${icon}"></i>
+                <span class="sidebar-text ms-3">${menu.strNombreMenu}</span>
+            </a>
+            <div class="collapse" id="${toggleId}">
+                <ul class="dropdown-menu w-100" id="submenu-${menu.id}"></ul>
+            </div>
+        `;
+
+        const submenu = li.querySelector(`#submenu-${menu.id}`);
 
         if (menu.modulos && menu.modulos.length > 0) {
             menu.modulos.forEach(modulo => {
@@ -102,20 +118,14 @@ class DashboardApp {
                     this.loadModule(modulo);
                 });
                 subItem.appendChild(subLink);
-                ul.appendChild(subItem);
+                submenu.appendChild(subItem);
             });
         } else {
-            const emptyItem = document.createElement('li');
-            const emptyLink = document.createElement('a');
-            emptyLink.className = 'dropdown-item disabled';
-            emptyLink.href = '#';
-            emptyLink.textContent = 'No hay módulos';
-            emptyItem.appendChild(emptyLink);
-            ul.appendChild(emptyItem);
+            submenu.innerHTML = `
+                <li><a class="dropdown-item disabled" href="#">Sin módulos</a></li>
+            `;
         }
 
-        li.appendChild(a);
-        li.appendChild(ul);
         return li;
     }
 

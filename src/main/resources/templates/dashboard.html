@@ -11,19 +11,24 @@
 </head>
 <body>
 <div class="dashboard-wrapper">
+
+    <!-- ✅ Sidebar hover desplegable -->
     <nav class="sidebar">
-        <div class="p-3">
-            <h4 class="text-center">Sistema Seguridad</h4>
-            <hr>
-            <ul class="nav flex-column" id="menusContainer"></ul>
+        <!-- Brand -->
+        <div class="sidebar-brand">
+            <span class="sidebar-brand-icon">
+                <i class="fas fa-shield-alt"></i>
+            </span>
+            <span class="sidebar-brand-text">Sistema Seguridad</span>
         </div>
+
+        <!-- Menús dinámicos -->
+        <ul class="nav flex-column mt-2" id="menusContainer"></ul>
     </nav>
 
+    <!-- Main Content -->
     <div class="main-content">
         <nav class="top-navbar">
-            <button class="btn btn-outline-secondary d-md-none" id="toggleSidebar">
-                <i class="fas fa-bars"></i>
-            </button>
             <div class="user-info" id="userInfo"></div>
             <button class="btn btn-outline-danger" id="logoutBtn">
                 <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
