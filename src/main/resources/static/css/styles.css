@@ -264,10 +264,6 @@ body {
     color: var(--accent);
 }
 
-/* Ocultar submenú cuando sidebar está colapsado */
-.sidebar:not(:hover) .collapse {
-    display: none !important;
-}
 
 /* Main content */
 .main-content {

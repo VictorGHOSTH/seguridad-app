@@ -81,34 +81,30 @@ class DashboardApp {
         const li = document.createElement('li');
         li.className = 'nav-item';
 
-        // ✅ Icono por nombre de menú
         const iconMap = {
-            'Seguridad': 'fa-lock',
+            'Seguridad':   'fa-lock',
             'Principal 1': 'fa-layer-group',
             'Principal 2': 'fa-th-large',
         };
         const icon = iconMap[menu.strNombreMenu] || 'fa-folder';
 
-        const toggleId = `menu-${menu.id}`;
-
-        li.innerHTML = `
-            <a class="nav-link dropdown-toggle"
-               href="#${toggleId}"
-               data-bs-toggle="collapse"
-               aria-expanded="false">
-                <i class="fas ${icon}"></i>
-                <span class="sidebar-text ms-3">${menu.strNombreMenu}</span>
-            </a>
-            <div class="collapse" id="${toggleId}">
-                <ul class="dropdown-menu w-100" id="submenu-${menu.id}"></ul>
-            </div>
+        // ✅ Link sin data-bs-toggle — manejamos el click manualmente
+        const navLink = document.createElement('a');
+        navLink.className = 'nav-link';
+        navLink.href = '#';
+        navLink.innerHTML = `
+            <i class="fas ${icon}"></i>
+            <span class="sidebar-text ms-2">${menu.strNombreMenu}</span>
+            <i class="fas fa-chevron-down ms-auto sidebar-text chevron" style="font-size:0.75rem; transition: transform 0.25s;"></i>
         `;
 
-        const submenu = li.querySelector(`#submenu-${menu.id}`);
+        // ✅ Submenu simple con display toggle
+        const submenu = document.createElement('div');
+        submenu.className = 'collapse-menu';
+        submenu.style.display = 'none';
 
         if (menu.modulos && menu.modulos.length > 0) {
             menu.modulos.forEach(modulo => {
-                const subItem = document.createElement('li');
                 const subLink = document.createElement('a');
                 subLink.className = 'dropdown-item';
                 subLink.href = '#';
@@ -117,15 +113,52 @@ class DashboardApp {
                     e.preventDefault();
                     this.loadModule(modulo);
                 });
-                subItem.appendChild(subLink);
-                submenu.appendChild(subItem);
+                submenu.appendChild(subLink);
             });
         } else {
-            submenu.innerHTML = `
-                <li><a class="dropdown-item disabled" href="#">Sin módulos</a></li>
-            `;
+            const empty = document.createElement('a');
+            empty.className = 'dropdown-item disabled';
+            empty.href = '#';
+            empty.textContent = 'Sin módulos';
+            submenu.appendChild(empty);
         }
 
+        // ✅ Toggle al hacer click
+        navLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const isOpen = submenu.style.display === 'block';
+            const chevron = navLink.querySelector('.chevron');
+
+            // Cerrar todos los demás submenús
+            document.querySelectorAll('.sidebar .collapse-menu').forEach(m => {
+                m.style.display = 'none';
+            });
+            document.querySelectorAll('.sidebar .chevron').forEach(c => {
+                c.style.transform = 'rotate(0deg)';
+            });
+
+            // Abrir/cerrar este
+            if (!isOpen) {
+                submenu.style.display = 'block';
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+            }
+        });
+
+        // ✅ Al colapsar el sidebar, cerrar todos los submenús
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar) {
+            sidebar.addEventListener('mouseleave', () => {
+                document.querySelectorAll('.sidebar .collapse-menu').forEach(m => {
+                    m.style.display = 'none';
+                });
+                document.querySelectorAll('.sidebar .chevron').forEach(c => {
+                    c.style.transform = 'rotate(0deg)';
+                });
+            });
+        }
+
+        li.appendChild(navLink);
+        li.appendChild(submenu);
         return li;
     }
 
