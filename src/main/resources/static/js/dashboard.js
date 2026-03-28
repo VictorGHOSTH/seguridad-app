@@ -109,9 +109,11 @@ class DashboardApp {
                 subLink.className = 'dropdown-item';
                 subLink.href = '#';
                 subLink.textContent = modulo.strNombreModulo;
+                // ✅ Pasar el nombre del menú padre
                 subLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    this.loadModule(modulo);
+                    const menuNombre = navLink.querySelector('.sidebar-text')?.textContent?.trim();
+                    this.loadModule(modulo, menuNombre);
                 });
                 submenu.appendChild(subLink);
             });
@@ -251,17 +253,93 @@ class DashboardApp {
             </div>`;
     }
 
-    updateBreadcrumbs(modulo) {
-        const breadcrumbsContainer = document.getElementById('breadcrumbs');
-        if (!breadcrumbsContainer) return;
-        breadcrumbsContainer.innerHTML = `
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="#" onclick="return false;">Inicio</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">${modulo.strNombreModulo}</li>
-                </ol>
-            </nav>`;
-    }
+   // ✅ Guardar referencia del menú actual
+   async loadModule(modulo, menuNombre = null) {
+       this.currentModule = modulo;
+       this.currentMenu = menuNombre || this.findMenuByModulo(modulo);
+       this.updateBreadcrumbs(modulo);
+
+       const permiso = this.getPermisoModulo(modulo.strNombreModulo);
+       const modulesWithCrud = ['Perfil', 'Módulo', 'Permisos-Perfil', 'Usuario'];
+
+       if (modulesWithCrud.includes(modulo.strNombreModulo)) {
+           await this.loadCrudModule(modulo.strNombreModulo, permiso);
+       } else {
+           this.loadStaticModule(modulo.strNombreModulo, permiso);
+       }
+   }
+
+   // ✅ Encontrar a qué menú pertenece el módulo
+   findMenuByModulo(modulo) {
+       const menus = document.querySelectorAll('#menusContainer .nav-item');
+       for (const menuEl of menus) {
+           const subLinks = menuEl.querySelectorAll('.dropdown-item');
+           for (const link of subLinks) {
+               if (link.textContent.trim() === modulo.strNombreModulo) {
+                   return menuEl.querySelector('.nav-link .sidebar-text')?.textContent?.trim() || null;
+               }
+           }
+       }
+       return null;
+   }
+
+   // ✅ Breadcrumbs con Inicio → Menú → Módulo
+   updateBreadcrumbs(modulo) {
+       const breadcrumbsContainer = document.getElementById('breadcrumbs');
+       if (!breadcrumbsContainer) return;
+
+       const items = [
+           // Inicio — limpia el contenido y vuelve a la pantalla de bienvenida
+           `<li class="breadcrumb-item">
+               <a href="#" onclick="window.dashboardApp.goHome(); return false;">
+                   <i class="fas fa-home me-1"></i>Inicio
+               </a>
+           </li>`
+       ];
+
+       // Menú padre si existe
+       if (this.currentMenu) {
+           items.push(`
+               <li class="breadcrumb-item">
+                   <span style="color: var(--bg-light); cursor: default;">
+                       ${this.currentMenu}
+                   </span>
+               </li>
+           `);
+       }
+
+       // Módulo actual — activo
+       items.push(`
+           <li class="breadcrumb-item active" aria-current="page">
+               ${modulo.strNombreModulo}
+           </li>
+       `);
+
+       breadcrumbsContainer.innerHTML = `
+           <nav aria-label="breadcrumb">
+               <ol class="breadcrumb mb-0">
+                   ${items.join('')}
+               </ol>
+           </nav>
+       `;
+   }
+
+   // ✅ Volver al inicio
+   goHome() {
+       this.currentModule = null;
+       this.currentMenu = null;
+
+       // Limpiar breadcrumbs
+       document.getElementById('breadcrumbs').innerHTML = '';
+
+       // Mostrar pantalla de bienvenida
+       document.getElementById('contentContainer').innerHTML = `
+           <div class="text-center py-5">
+               <h3 style="color: var(--bg-dark);">Bienvenido al Sistema de Seguridad</h3>
+               <p style="color: var(--bg-light);">Seleccione un módulo del menú para comenzar</p>
+           </div>
+       `;
+   }
 
     loadUserInfo() {
         const userInfo = document.getElementById('userInfo');
