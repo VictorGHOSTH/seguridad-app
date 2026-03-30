@@ -10,6 +10,14 @@
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
+<body>
+<script>
+    (function() {
+        if (!localStorage.getItem('token')) {
+            window.location.replace('/login');
+        }
+    })();
+</script>
 <div class="dashboard-wrapper">
 
     <!-- ✅ Sidebar hover desplegable -->

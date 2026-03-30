@@ -5,22 +5,22 @@ class DashboardApp {
         this.esAdministrador = localStorage.getItem('esAdministrador') === 'true';
         this.permisos = JSON.parse(localStorage.getItem('permisos') || '[]');
         this.currentModule = null;
+        this.currentMenu = null;
         this.init();
     }
 
-    // ✅ Método init que faltaba
     async init() {
         if (!this.token) {
-            window.location.href = '/login';
+            window.location.replace('/login');
             return;
         }
         await this.verifyToken();
         this.loadUserInfo();
         await this.loadMenus();
         this.bindEvents();
+        this.goHome();
     }
 
-    // ✅ Método verifyToken que faltaba
     async verifyToken() {
         try {
             const response = await fetch('/api/auth/verify', {
@@ -28,11 +28,8 @@ class DashboardApp {
             });
             if (!response.ok) throw new Error('Token inválido');
         } catch (error) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('usuario');
-            localStorage.removeItem('esAdministrador');
-            localStorage.removeItem('permisos');
-            window.location.href = '/login';
+            localStorage.clear();
+            window.location.replace('/login');
         }
     }
 
@@ -65,7 +62,6 @@ class DashboardApp {
         })).filter(menu => menu.modulos.length > 0);
     }
 
-    // ✅ Método renderMenus que faltaba
     renderMenus(menus) {
         const menuContainer = document.getElementById('menusContainer');
         if (!menuContainer) return;
@@ -76,7 +72,6 @@ class DashboardApp {
         });
     }
 
-    // ✅ Método createMenuItem que faltaba
     createMenuItem(menu) {
         const li = document.createElement('li');
         li.className = 'nav-item';
@@ -88,7 +83,6 @@ class DashboardApp {
         };
         const icon = iconMap[menu.strNombreMenu] || 'fa-folder';
 
-        // ✅ Link sin data-bs-toggle — manejamos el click manualmente
         const navLink = document.createElement('a');
         navLink.className = 'nav-link';
         navLink.href = '#';
@@ -98,7 +92,6 @@ class DashboardApp {
             <i class="fas fa-chevron-down ms-auto sidebar-text chevron" style="font-size:0.75rem; transition: transform 0.25s;"></i>
         `;
 
-        // ✅ Submenu simple con display toggle
         const submenu = document.createElement('div');
         submenu.className = 'collapse-menu';
         submenu.style.display = 'none';
@@ -109,7 +102,6 @@ class DashboardApp {
                 subLink.className = 'dropdown-item';
                 subLink.href = '#';
                 subLink.textContent = modulo.strNombreModulo;
-                // ✅ Pasar el nombre del menú padre
                 subLink.addEventListener('click', (e) => {
                     e.preventDefault();
                     const menuNombre = navLink.querySelector('.sidebar-text')?.textContent?.trim();
@@ -125,13 +117,11 @@ class DashboardApp {
             submenu.appendChild(empty);
         }
 
-        // ✅ Toggle al hacer click
         navLink.addEventListener('click', (e) => {
             e.preventDefault();
             const isOpen = submenu.style.display === 'block';
             const chevron = navLink.querySelector('.chevron');
 
-            // Cerrar todos los demás submenús
             document.querySelectorAll('.sidebar .collapse-menu').forEach(m => {
                 m.style.display = 'none';
             });
@@ -139,14 +129,12 @@ class DashboardApp {
                 c.style.transform = 'rotate(0deg)';
             });
 
-            // Abrir/cerrar este
             if (!isOpen) {
                 submenu.style.display = 'block';
                 if (chevron) chevron.style.transform = 'rotate(180deg)';
             }
         });
 
-        // ✅ Al colapsar el sidebar, cerrar todos los submenús
         const sidebar = document.querySelector('.sidebar');
         if (sidebar) {
             sidebar.addEventListener('mouseleave', () => {
@@ -164,8 +152,10 @@ class DashboardApp {
         return li;
     }
 
-    async loadModule(modulo) {
+    // ✅ Un solo loadModule con menuNombre
+    async loadModule(modulo, menuNombre = null) {
         this.currentModule = modulo;
+        this.currentMenu = menuNombre || this.findMenuByModulo(modulo);
         this.updateBreadcrumbs(modulo);
 
         const permiso = this.getPermisoModulo(modulo.strNombreModulo);
@@ -176,6 +166,19 @@ class DashboardApp {
         } else {
             this.loadStaticModule(modulo.strNombreModulo, permiso);
         }
+    }
+
+    findMenuByModulo(modulo) {
+        const menus = document.querySelectorAll('#menusContainer .nav-item');
+        for (const menuEl of menus) {
+            const subLinks = menuEl.querySelectorAll('.dropdown-item');
+            for (const link of subLinks) {
+                if (link.textContent.trim() === modulo.strNombreModulo) {
+                    return menuEl.querySelector('.nav-link .sidebar-text')?.textContent?.trim() || null;
+                }
+            }
+        }
+        return null;
     }
 
     async loadCrudModule(moduleName, permiso) {
@@ -227,119 +230,193 @@ class DashboardApp {
             bitEliminar: true, bitDetalle: true
         } : (permiso || {});
 
-        const contentContainer = document.getElementById('contentContainer');
-        contentContainer.innerHTML = `
+        document.getElementById('contentContainer').innerHTML = `
             <div class="card">
                 <div class="card-header"><h3>${moduleName}</h3></div>
                 <div class="card-body">
                     <div class="mb-3">
-                        ${p.bitAgregar ? `<button class="btn btn-primary me-1" onclick="alert('Agregar')"><i class="fas fa-plus"></i> Agregar</button>` : ''}
-                        ${p.bitEditar ? `<button class="btn btn-warning me-1" onclick="alert('Editar')"><i class="fas fa-edit"></i> Editar</button>` : ''}
-                        ${p.bitEliminar ? `<button class="btn btn-danger me-1" onclick="alert('Eliminar')"><i class="fas fa-trash"></i> Eliminar</button>` : ''}
-                        ${p.bitConsulta ? `<button class="btn btn-info me-1" onclick="alert('Consultar')"><i class="fas fa-search"></i> Consultar</button>` : ''}
-                        ${p.bitDetalle ? `<button class="btn btn-secondary me-1" onclick="alert('Detalle')"><i class="fas fa-info-circle"></i> Detalle</button>` : ''}
+                        ${p.bitAgregar ? `<button class="btn btn-primary me-1"><i class="fas fa-plus"></i> Agregar</button>` : ''}
+                        ${p.bitEditar ? `<button class="btn btn-warning me-1"><i class="fas fa-edit"></i> Editar</button>` : ''}
+                        ${p.bitEliminar ? `<button class="btn btn-danger me-1"><i class="fas fa-trash"></i> Eliminar</button>` : ''}
+                        ${p.bitConsulta ? `<button class="btn btn-info me-1"><i class="fas fa-search"></i> Consultar</button>` : ''}
+                        ${p.bitDetalle ? `<button class="btn btn-secondary me-1"><i class="fas fa-info-circle"></i> Detalle</button>` : ''}
                     </div>
                     <div class="alert alert-info">Módulo estático — sin funcionalidad real.</div>
-                    <div class="table-container">
-                        <table class="table table-striped">
-                            <thead><tr><th>ID</th><th>Nombre</th><th>Descripción</th></tr></thead>
-                            <tbody>
-                                <tr><td>1</td><td>Ejemplo 1</td><td>Datos de ejemplo</td></tr>
-                                <tr><td>2</td><td>Ejemplo 2</td><td>Datos de ejemplo</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <table class="table table-striped mt-3">
+                        <thead><tr><th>Nombre</th><th>Descripción</th></tr></thead>
+                        <tbody>
+                            <tr><td>Ejemplo 1</td><td>Datos de ejemplo</td></tr>
+                            <tr><td>Ejemplo 2</td><td>Datos de ejemplo</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>`;
     }
 
-   // ✅ Guardar referencia del menú actual
-   async loadModule(modulo, menuNombre = null) {
-       this.currentModule = modulo;
-       this.currentMenu = menuNombre || this.findMenuByModulo(modulo);
-       this.updateBreadcrumbs(modulo);
+    updateBreadcrumbs(modulo) {
+        const breadcrumbsContainer = document.getElementById('breadcrumbs');
+        if (!breadcrumbsContainer) return;
 
-       const permiso = this.getPermisoModulo(modulo.strNombreModulo);
-       const modulesWithCrud = ['Perfil', 'Módulo', 'Permisos-Perfil', 'Usuario'];
+        const items = [
+            `<li class="breadcrumb-item">
+                <a href="#" onclick="window.dashboardApp.goHome(); return false;">
+                    <i class="fas fa-home me-1"></i>Inicio
+                </a>
+            </li>`
+        ];
 
-       if (modulesWithCrud.includes(modulo.strNombreModulo)) {
-           await this.loadCrudModule(modulo.strNombreModulo, permiso);
-       } else {
-           this.loadStaticModule(modulo.strNombreModulo, permiso);
-       }
-   }
+        if (this.currentMenu) {
+            items.push(`
+                <li class="breadcrumb-item">
+                    <span style="color: var(--bg-light); cursor: default;">${this.currentMenu}</span>
+                </li>`);
+        }
 
-   // ✅ Encontrar a qué menú pertenece el módulo
-   findMenuByModulo(modulo) {
-       const menus = document.querySelectorAll('#menusContainer .nav-item');
-       for (const menuEl of menus) {
-           const subLinks = menuEl.querySelectorAll('.dropdown-item');
-           for (const link of subLinks) {
-               if (link.textContent.trim() === modulo.strNombreModulo) {
-                   return menuEl.querySelector('.nav-link .sidebar-text')?.textContent?.trim() || null;
-               }
-           }
-       }
-       return null;
-   }
+        items.push(`
+            <li class="breadcrumb-item active" aria-current="page">
+                ${modulo.strNombreModulo}
+            </li>`);
 
-   // ✅ Breadcrumbs con Inicio → Menú → Módulo
-   updateBreadcrumbs(modulo) {
-       const breadcrumbsContainer = document.getElementById('breadcrumbs');
-       if (!breadcrumbsContainer) return;
+        breadcrumbsContainer.innerHTML = `
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">${items.join('')}</ol>
+            </nav>`;
+    }
 
-       const items = [
-           // Inicio — limpia el contenido y vuelve a la pantalla de bienvenida
-           `<li class="breadcrumb-item">
-               <a href="#" onclick="window.dashboardApp.goHome(); return false;">
-                   <i class="fas fa-home me-1"></i>Inicio
-               </a>
-           </li>`
-       ];
+    goHome() {
+        this.currentModule = null;
+        this.currentMenu = null;
+        document.getElementById('breadcrumbs').innerHTML = '';
+        document.getElementById('contentContainer').innerHTML = `
+            <div style="animation: fadeIn 0.4s ease-out;">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div style="background:rgba(249,177,122,0.15);border-radius:12px;padding:14px;">
+                                    <i class="fas fa-car fa-lg" style="color:var(--accent);"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:1.8rem;font-weight:700;color:var(--bg-dark);line-height:1;">1,248</div>
+                                    <div style="color:var(--bg-light);font-size:0.85rem;font-weight:600;">Vehículos Registrados</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div style="background:rgba(92,184,92,0.15);border-radius:12px;padding:14px;">
+                                    <i class="fas fa-check-circle fa-lg" style="color:#5cb85c;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:1.8rem;font-weight:700;color:var(--bg-dark);line-height:1;">987</div>
+                                    <div style="color:var(--bg-light);font-size:0.85rem;font-weight:600;">Permisos Vigentes</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div style="background:rgba(224,92,92,0.15);border-radius:12px;padding:14px;">
+                                    <i class="fas fa-exclamation-triangle fa-lg" style="color:#e05c5c;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:1.8rem;font-weight:700;color:var(--bg-dark);line-height:1;">43</div>
+                                    <div style="color:var(--bg-light);font-size:0.85rem;font-weight:600;">Permisos Vencidos</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div style="background:rgba(103,111,157,0.15);border-radius:12px;padding:14px;">
+                                    <i class="fas fa-tools fa-lg" style="color:var(--bg-light);"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:1.8rem;font-weight:700;color:var(--bg-dark);line-height:1;">18</div>
+                                    <div style="color:var(--bg-light);font-size:0.85rem;font-weight:600;">En Mantenimiento</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-       // Menú padre si existe
-       if (this.currentMenu) {
-           items.push(`
-               <li class="breadcrumb-item">
-                   <span style="color: var(--bg-light); cursor: default;">
-                       ${this.currentMenu}
-                   </span>
-               </li>
-           `);
-       }
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>Últimos Vehículos Registrados</span>
+                                <span class="badge" style="background:var(--accent);color:var(--bg-dark);">Hoy</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Placa</th>
+                                            <th>Propietario</th>
+                                            <th>Tipo</th>
+                                            <th>Estado</th>
+                                            <th>Vencimiento</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td><strong>ABC-1234</strong></td><td>Carlos Mendoza</td><td>Sedán</td><td><span class="badge badge-success">Vigente</span></td><td>15/08/2025</td></tr>
+                                        <tr><td><strong>XYZ-5678</strong></td><td>María López</td><td>SUV</td><td><span class="badge badge-success">Vigente</span></td><td>22/11/2025</td></tr>
+                                        <tr><td><strong>DEF-9012</strong></td><td>Juan Torres</td><td>Pickup</td><td><span class="badge badge-danger">Vencido</span></td><td>01/01/2025</td></tr>
+                                        <tr><td><strong>GHI-3456</strong></td><td>Ana Ramírez</td><td>Moto</td><td><span class="badge badge-success">Vigente</span></td><td>30/06/2025</td></tr>
+                                        <tr><td><strong>JKL-7890</strong></td><td>Pedro Castillo</td><td>Camión</td><td><span class="badge badge-warning" style="color:var(--bg-dark);">Por vencer</span></td><td>10/04/2025</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
 
-       // Módulo actual — activo
-       items.push(`
-           <li class="breadcrumb-item active" aria-current="page">
-               ${modulo.strNombreModulo}
-           </li>
-       `);
+                    <div class="col-md-4 d-flex flex-column gap-3">
+                        <div class="card">
+                            <div class="card-header">Distribución por Tipo</div>
+                            <div class="card-body">
+                                ${[
+                                    ['Sedán', 42, 'var(--accent)'],
+                                    ['SUV', 28, 'var(--bg-mid)'],
+                                    ['Pickup', 18, 'var(--bg-light)'],
+                                    ['Motocicleta', 8, '#5cb85c'],
+                                    ['Otros', 4, '#e05c5c']
+                                ].map(([label, pct, color]) => `
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small style="color:var(--bg-mid);font-weight:600;">${label}</small>
+                                            <small style="color:var(--bg-mid);">${pct}%</small>
+                                        </div>
+                                        <div style="background:rgba(66,71,105,0.15);border-radius:4px;height:8px;">
+                                            <div style="background:${color};width:${pct}%;height:100%;border-radius:4px;"></div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
 
-       breadcrumbsContainer.innerHTML = `
-           <nav aria-label="breadcrumb">
-               <ol class="breadcrumb mb-0">
-                   ${items.join('')}
-               </ol>
-           </nav>
-       `;
-   }
-
-   // ✅ Volver al inicio
-   goHome() {
-       this.currentModule = null;
-       this.currentMenu = null;
-
-       // Limpiar breadcrumbs
-       document.getElementById('breadcrumbs').innerHTML = '';
-
-       // Mostrar pantalla de bienvenida
-       document.getElementById('contentContainer').innerHTML = `
-           <div class="text-center py-5">
-               <h3 style="color: var(--bg-dark);">Bienvenido al Sistema de Seguridad</h3>
-               <p style="color: var(--bg-light);">Seleccione un módulo del menú para comenzar</p>
-           </div>
-       `;
-   }
+                        <div class="card">
+                            <div class="card-header"><i class="fas fa-bell me-2"></i>Alertas Recientes</div>
+                            <div class="card-body p-0">
+                                ${[
+                                    ['Permiso por vencer', 'JKL-7890 — vence en 5 días'],
+                                    ['Mantenimiento programado', 'MNO-1122 — revisión técnica'],
+                                    ['Nuevo registro', 'PQR-3344 registrado hoy']
+                                ].map(([titulo, desc], i, arr) => `
+                                    <div style="padding:12px 16px;${i < arr.length-1 ? 'border-bottom:1px solid rgba(66,71,105,0.1);' : ''}">
+                                        <div style="font-size:0.85rem;font-weight:600;color:var(--bg-dark);">${titulo}</div>
+                                        <div style="font-size:0.78rem;color:var(--bg-light);">${desc}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    }
 
     loadUserInfo() {
         const userInfo = document.getElementById('userInfo');
@@ -347,8 +424,8 @@ class DashboardApp {
             userInfo.innerHTML = `
                 <div class="d-flex align-items-center">
                     ${this.usuario.strFotoPerfil ?
-                        `<img src="${this.usuario.strFotoPerfil}" class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">` :
-                        '<i class="fas fa-user-circle me-2 fa-2x"></i>'
+                        `<img src="${this.usuario.strFotoPerfil}" class="rounded-circle me-2" width="40" height="40" style="object-fit:cover;">` :
+                        '<i class="fas fa-user-circle me-2 fa-2x" style="color:var(--bg-mid);"></i>'
                     }
                     <div>
                         <strong>${this.usuario.strNombreUsuario || 'Usuario'}</strong><br>
@@ -362,19 +439,8 @@ class DashboardApp {
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => {
-                localStorage.removeItem('token');
-                localStorage.removeItem('usuario');
-                localStorage.removeItem('esAdministrador');
-                localStorage.removeItem('permisos');
-                window.location.href = '/login';
-            });
-        }
-
-        const toggleSidebar = document.getElementById('toggleSidebar');
-        if (toggleSidebar) {
-            toggleSidebar.addEventListener('click', () => {
-                const sidebar = document.querySelector('.sidebar');
-                sidebar.classList.toggle('active');
+                localStorage.clear();
+                window.location.replace('/login');
             });
         }
     }
