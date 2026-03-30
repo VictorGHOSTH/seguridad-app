@@ -44,19 +44,21 @@ class ModuloModule {
 
         tbody.innerHTML = modulos.map(modulo => `
             <tr>
-                <td>${modulo.id}</td>
                 <td>${this.escapeHtml(modulo.strNombreModulo)}</td>
                 <td>
-                    <div class="btn-group" role="group">
-                        <button class="btn btn-sm btn-info" onclick="window.moduloModule.viewDetail(${modulo.id})" title="Ver detalle">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-warning" onclick="window.moduloModule.editModulo(${modulo.id})" title="Editar">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="window.moduloModule.deleteModulo(${modulo.id})" title="Eliminar">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                    <div class="btn-group">
+                        ${this.permisos.bitDetalle !== false ? `
+                            <button class="btn btn-sm btn-info" onclick="window.moduloModule.viewDetail(${modulo.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>` : ''}
+                        ${this.permisos.bitEditar !== false ? `
+                            <button class="btn btn-sm btn-warning" onclick="window.moduloModule.editModulo(${modulo.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>` : ''}
+                        ${this.permisos.bitEliminar !== false ? `
+                            <button class="btn btn-sm btn-danger" onclick="window.moduloModule.deleteModulo(${modulo.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>` : ''}
                     </div>
                 </td>
             </tr>

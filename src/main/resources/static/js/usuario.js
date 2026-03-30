@@ -76,7 +76,6 @@ class UsuarioModule {
             const perfil = this.perfiles.find(p => p.id === usuario.idPerfil);
             return `
                 <tr>
-                    <td>${usuario.id}</td>
                     <td>
                         ${usuario.strFotoPerfil ?
                             `<img src="${usuario.strFotoPerfil}" width="40" height="40" class="rounded-circle" style="object-fit: cover;">` :
@@ -93,16 +92,19 @@ class UsuarioModule {
                     <td>${this.escapeHtml(usuario.strCorreo)}</td>
                     <td>${this.escapeHtml(usuario.strNumeroCelular || 'N/A')}</td>
                     <td>
-                        <div class="btn-group" role="group">
-                            <button class="btn btn-sm btn-info" onclick="window.usuarioModule.viewDetail(${usuario.id})" title="Ver detalle">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-warning" onclick="window.usuarioModule.editUsuario(${usuario.id})" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="window.usuarioModule.deleteUsuario(${usuario.id})" title="Eliminar">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                        <div class="btn-group">
+                            ${this.permisos.bitDetalle !== false ? `
+                                <button class="btn btn-sm btn-info" onclick="window.usuarioModule.viewDetail(${usuario.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>` : ''}
+                            ${this.permisos.bitEditar !== false ? `
+                                <button class="btn btn-sm btn-warning" onclick="window.usuarioModule.editUsuario(${usuario.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>` : ''}
+                            ${this.permisos.bitEliminar !== false ? `
+                                <button class="btn btn-sm btn-danger" onclick="window.usuarioModule.deleteUsuario(${usuario.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>` : ''}
                         </div>
                     </td>
                 </tr>

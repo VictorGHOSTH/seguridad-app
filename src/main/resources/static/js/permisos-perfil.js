@@ -114,47 +114,33 @@ class PermisosPerfilModule {
         const tbody = document.getElementById('modulosPermisosBody');
         if (!tbody) return;
 
-        tbody.innerHTML = this.modulos.map(modulo => {
-            const permisoExistente = permisosActuales.find(p => p.idModulo === modulo.id);
-            const visible = !!permisoExistente;
-            const ag = permisoExistente?.bitAgregar || false;
-            const ed = permisoExistente?.bitEditar || false;
-            const co = permisoExistente?.bitConsulta || false;
-            const el = permisoExistente?.bitEliminar || false;
-            const de = permisoExistente?.bitDetalle || false;
-            const pid = permisoExistente?.id || '';
-
+        tbody.innerHTML = permisos.map(permiso => {
+            const perfil = this.perfiles.find(p => p.id === permiso.idPerfil);
+            const modulo = this.modulos.find(m => m.id === permiso.idModulo);
             return `
-                <tr id="row-modulo-${modulo.id}" class="${visible ? '' : 'table-light text-muted'}">
+                <tr>
+                    <td>${perfil ? this.escapeHtml(perfil.strNombrePerfil) : 'N/A'}</td>
+                    <td>${modulo ? this.escapeHtml(modulo.strNombreModulo) : 'N/A'}</td>
+                    <td class="text-center"><i class="fas ${permiso.bitAgregar ? 'fa-check text-success' : 'fa-times text-danger'}"></i></td>
+                    <td class="text-center"><i class="fas ${permiso.bitEditar ? 'fa-check text-success' : 'fa-times text-danger'}"></i></td>
+                    <td class="text-center"><i class="fas ${permiso.bitConsulta ? 'fa-check text-success' : 'fa-times text-danger'}"></i></td>
+                    <td class="text-center"><i class="fas ${permiso.bitEliminar ? 'fa-check text-success' : 'fa-times text-danger'}"></i></td>
+                    <td class="text-center"><i class="fas ${permiso.bitDetalle ? 'fa-check text-success' : 'fa-times text-danger'}"></i></td>
                     <td>
-                        <input type="hidden" id="permiso-id-${modulo.id}" value="${pid}">
-                        <strong>${this.escapeHtml(modulo.strNombreModulo)}</strong>
-                    </td>
-                    <td class="text-center">
-                        <input type="checkbox" class="form-check-input chk-visible"
-                            id="visible-${modulo.id}"
-                            ${visible ? 'checked' : ''}
-                            onchange="window.permisosPerfilModule.onVisibleChange(${modulo.id})">
-                    </td>
-                    <td class="text-center">
-                        <input type="checkbox" class="form-check-input crud-check"
-                            id="agregar-${modulo.id}" ${ag ? 'checked' : ''} ${!visible ? 'disabled' : ''}>
-                    </td>
-                    <td class="text-center">
-                        <input type="checkbox" class="form-check-input crud-check"
-                            id="editar-${modulo.id}" ${ed ? 'checked' : ''} ${!visible ? 'disabled' : ''}>
-                    </td>
-                    <td class="text-center">
-                        <input type="checkbox" class="form-check-input crud-check"
-                            id="consultar-${modulo.id}" ${co ? 'checked' : ''} ${!visible ? 'disabled' : ''}>
-                    </td>
-                    <td class="text-center">
-                        <input type="checkbox" class="form-check-input crud-check"
-                            id="eliminar-${modulo.id}" ${el ? 'checked' : ''} ${!visible ? 'disabled' : ''}>
-                    </td>
-                    <td class="text-center">
-                        <input type="checkbox" class="form-check-input crud-check"
-                            id="detalle-${modulo.id}" ${de ? 'checked' : ''} ${!visible ? 'disabled' : ''}>
+                        <div class="btn-group">
+                            ${this.permisos.bitEditar !== false ? `
+                            <button class="btn btn-sm btn-warning"
+                                onclick="window.permisosPerfilModule.editPermisos(${permiso.idPerfil})"
+                                title="Editar permisos del perfil">
+                                <i class="fas fa-edit"></i>
+                            </button>` : ''}
+                            ${this.permisos.bitEliminar !== false ? `
+                            <button class="btn btn-sm btn-danger"
+                                onclick="window.permisosPerfilModule.deletePermiso(${permiso.id})"
+                                title="Eliminar este permiso">
+                                <i class="fas fa-trash"></i>
+                            </button>` : ''}
+                        </div>
                     </td>
                 </tr>
             `;

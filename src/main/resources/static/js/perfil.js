@@ -48,9 +48,9 @@ class PerfilModule {
             return;
         }
 
+        // perfil.js - renderTable
         tbody.innerHTML = perfiles.map(perfil => `
             <tr>
-                <td>${perfil.id}</td>
                 <td>${this.escapeHtml(perfil.strNombrePerfil)}</td>
                 <td>
                     <span class="badge ${perfil.bitAdministrador ? 'badge-success' : 'badge-secondary'}">
@@ -60,15 +60,15 @@ class PerfilModule {
                 <td>
                     <div class="btn-group">
                         ${this.permisos.bitDetalle !== false ? `
-                            <button class="btn btn-sm btn-info" onclick="window.perfilModule.viewDetail(${perfil.id})" title="Ver detalle">
+                            <button class="btn btn-sm btn-info" onclick="window.perfilModule.viewDetail(${perfil.id})">
                                 <i class="fas fa-eye"></i>
                             </button>` : ''}
                         ${this.permisos.bitEditar !== false ? `
-                            <button class="btn btn-sm btn-warning" onclick="window.perfilModule.editPerfil(${perfil.id})" title="Editar">
+                            <button class="btn btn-sm btn-warning" onclick="window.perfilModule.editPerfil(${perfil.id})">
                                 <i class="fas fa-edit"></i>
                             </button>` : ''}
                         ${this.permisos.bitEliminar !== false ? `
-                            <button class="btn btn-sm btn-danger" onclick="window.perfilModule.deletePerfil(${perfil.id})" title="Eliminar">
+                            <button class="btn btn-sm btn-danger" onclick="window.perfilModule.deletePerfil(${perfil.id})">
                                 <i class="fas fa-trash"></i>
                             </button>` : ''}
                     </div>
