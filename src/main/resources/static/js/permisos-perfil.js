@@ -78,36 +78,43 @@ class PermisosPerfilModule {
     // ✅ Al cambiar el perfil en el modal, cargar sus permisos actuales
     async onPerfilChange() {
         const perfilId = document.getElementById('permisosPerfil').value;
+
         if (!perfilId) {
             document.getElementById('modulosContainer').style.display = 'none';
+            document.getElementById('modulosLoading').style.display = 'none';
             return;
         }
 
         document.getElementById('modulosLoading').style.display = 'block';
         document.getElementById('modulosContainer').style.display = 'none';
 
-        // Obtener permisos actuales del perfil
-        const permisosActuales = await this.getPermisosByPerfil(parseInt(perfilId));
-        this.renderModulosPermisos(permisosActuales);
-
-        document.getElementById('modulosLoading').style.display = 'none';
-        document.getElementById('modulosContainer').style.display = 'block';
-    }
-
-    async getPermisosByPerfil(perfilId) {
         try {
-            const response = await fetch(`/api/permisos-perfil?page=1&pageSize=1000`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                return data.data.filter(p => p.idPerfil === perfilId);
-            }
+            const permisosActuales = await this.getPermisosByPerfil(parseInt(perfilId));
+            this.renderModulosPermisos(permisosActuales);
+            document.getElementById('modulosLoading').style.display = 'none';
+            document.getElementById('modulosContainer').style.display = 'block';
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error en onPerfilChange:', error);
+            document.getElementById('modulosLoading').style.display = 'none';
         }
-        return [];
     }
+
+   async getPermisosByPerfil(perfilId) {
+       try {
+           // ✅ Hacer múltiples páginas si es necesario, o traer página grande
+           const response = await fetch(`/api/permisos-perfil?page=1`, {
+               headers: { 'Authorization': `Bearer ${this.token}` }
+           });
+           if (response.ok) {
+               const data = await response.json();
+               // ✅ Filtrar del lado del cliente
+               return data.data.filter(p => p.idPerfil === perfilId);
+           }
+       } catch (error) {
+           console.error('Error:', error);
+       }
+       return [];
+   }
 
     // ✅ Renderizar tabla de módulos con checkboxes
     renderModulosPermisos(permisosActuales) {
