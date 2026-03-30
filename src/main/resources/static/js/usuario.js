@@ -1,6 +1,7 @@
 class UsuarioModule {
     constructor(token) {
         this.token = token;
+        this.permisos = permisos;
         this.currentPage = 1;
         this.pageSize = 5;
         this.perfiles = [];
