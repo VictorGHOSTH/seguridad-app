@@ -1,5 +1,5 @@
 class ModuloModule {
-    constructor(token) {
+constructor(token, permisos = {}) {
         this.token = token;
         this.permisos = permisos;
         this.currentPage = 1;

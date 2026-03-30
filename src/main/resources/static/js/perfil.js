@@ -1,7 +1,7 @@
 class PerfilModule {
     constructor(token, permisos = {}) {
         this.token = token;
-        this.permisos = permisos; // ✅ recibir permisos
+        this.permisos = permisos;
         this.currentPage = 1;
         this.pageSize = 5;
         this.init();
@@ -222,7 +222,7 @@ class PerfilModule {
 
             if (response.ok) {
                 const perfil = await response.json();
-                document.getElementById('detailId').textContent = perfil.id;
+                //document.getElementById('detailId').textContent = perfil.id;
                 document.getElementById('detailNombre').textContent = perfil.strNombrePerfil;
                 document.getElementById('detailAdministrador').textContent = perfil.bitAdministrador ? 'Sí' : 'No';
                 new bootstrap.Modal(document.getElementById('perfilDetailModal')).show();
