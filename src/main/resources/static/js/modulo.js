@@ -10,6 +10,14 @@ constructor(token, permisos = {}) {
     async init() {
         await this.loadModulos();
         this.bindEvents();
+        this.aplicarPermisos(); // ✅
+    }
+
+    aplicarPermisos() {
+        const btnNuevo = document.getElementById('btnNuevoModulo');
+        if (btnNuevo && !this.permisos.bitAgregar) {
+            btnNuevo.style.display = 'none';
+        }
     }
 
     async loadModulos() {
@@ -221,29 +229,24 @@ constructor(token, permisos = {}) {
         }
     }
 
-    async viewDetail(id) {
-        try {
-            const response = await fetch(`/api/modulos/${id}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+   async viewDetail(id) {
+       try {
+           const response = await fetch(`/api/modulos/${id}`, {
+               headers: { 'Authorization': `Bearer ${this.token}` }
+           });
 
-            if (response.ok) {
-                const modulo = await response.json();
-                document.getElementById('detailId').textContent = modulo.id;
-                document.getElementById('detailNombre').textContent = modulo.strNombreModulo;
-
-                const modal = new bootstrap.Modal(document.getElementById('moduloDetailModal'));
-                modal.show();
-            } else {
-                this.showError('Error al cargar el detalle del módulo');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            this.showError('Error al cargar el detalle del módulo');
-        }
-    }
+           if (response.ok) {
+               const modulo = await response.json();
+               // ✅ solo nombre, sin ID
+               document.getElementById('detailNombre').textContent = modulo.strNombreModulo;
+               new bootstrap.Modal(document.getElementById('moduloDetailModal')).show();
+           } else {
+               this.showError('Error al cargar el detalle del módulo');
+           }
+       } catch (error) {
+           this.showError('Error al cargar el detalle del módulo');
+       }
+   }
 
     bindEvents() {
         const form = document.getElementById('moduloForm');

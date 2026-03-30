@@ -4,8 +4,9 @@
     </div>
     <div class="card-body">
         <div class="mb-3">
-            <button id="btnNuevoPermiso" class="btn btn-primary" onclick="window.permisosPerfilModule.showCreateModal()">
-                <i class="fas fa-plus"></i> Nuevo Permiso
+            <!-- ✅ fix: id y onclick correctos -->
+            <button id="btnNuevoModulo" class="btn btn-primary" onclick="window.moduloModule.showCreateModal()">
+                <i class="fas fa-plus"></i> Nuevo Módulo
             </button>
         </div>
 
@@ -19,18 +20,12 @@
                     </tr>
                     </thead>
                     <tbody id="moduloTableBody">
-                    <tr>
-                        <td colspan="3" class="text-center">Cargando...</td>
-                    </tr>
+                    <tr><td colspan="2" class="text-center">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
-
             <div class="pagination-container">
-                <nav>
-                    <ul class="pagination" id="pagination">
-                    </ul>
-                </nav>
+                <nav><ul class="pagination" id="pagination"></ul></nav>
             </div>
         </div>
     </div>
@@ -60,6 +55,7 @@
     </div>
 </div>
 
+<!-- ✅ fix: quitar ID del detalle -->
 <div class="modal fade" id="moduloDetailModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -68,9 +64,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <strong>ID:</strong> <span id="detailId"></span>
-                </div>
                 <div class="mb-3">
                     <strong>Nombre:</strong> <span id="detailNombre"></span>
                 </div>
