@@ -120,14 +120,36 @@ class PermisosPerfilModule {
 
    async getPermisosByPerfil(perfilId) {
        try {
-           //  Hacer múltiples páginas si es necesario, o traer página grande
+           // ✅ Traer suficientes registros para cubrir todos los módulos
            const response = await fetch(`/api/permisos-perfil?page=1`, {
                headers: { 'Authorization': `Bearer ${this.token}` }
            });
            if (response.ok) {
                const data = await response.json();
-               //  Filtrar del lado del cliente
-               return data.data.filter(p => p.idPerfil === perfilId);
+               const total = data.total;
+               const pageSize = data.pageSize;
+               const totalPages = Math.ceil(total / pageSize);
+
+               let todosLosPermisos = [...data.data];
+
+               // ✅ Si hay más páginas, traerlas todas
+               if (totalPages > 1) {
+                   const peticiones = [];
+                   for (let page = 2; page <= totalPages; page++) {
+                       peticiones.push(
+                           fetch(`/api/permisos-perfil?page=${page}`, {
+                               headers: { 'Authorization': `Bearer ${this.token}` }
+                           }).then(r => r.json())
+                       );
+                   }
+                   const resultados = await Promise.all(peticiones);
+                   resultados.forEach(r => {
+                       todosLosPermisos = [...todosLosPermisos, ...r.data];
+                   });
+               }
+
+               // ✅ Filtrar por el perfil seleccionado
+               return todosLosPermisos.filter(p => p.idPerfil === perfilId);
            }
        } catch (error) {
            console.error('Error:', error);
