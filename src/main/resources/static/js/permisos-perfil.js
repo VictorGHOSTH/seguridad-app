@@ -13,7 +13,7 @@ class PermisosPerfilModule {
     async init() {
         await Promise.all([
             this.loadPerfiles(),
-            this.loadModulos()
+            this.loadModulos()  // ✅ cargar módulos al inicio
         ]);
         await this.loadPermisos();
         this.aplicarPermisos();
@@ -42,40 +42,21 @@ class PermisosPerfilModule {
         }
     }
 
-    async loadPermisos() {
+    // ✅ método que faltaba
+    async loadModulos() {
         try {
-            // ✅ Traer todos los permisos en una sola llamada para filtrar correctamente
-            const response = await fetch(`/api/permisos-perfil?page=1`, {
+            const response = await fetch('/api/modulos/all', {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
-
             if (response.ok) {
-                const data = await response.json();
-
-                // ✅ Filtrar del lado del cliente si hay filtro activo
-                let todosLosPermisos = data.data;
-
-                if (this.filtroPerfilId) {
-                    todosLosPermisos = todosLosPermisos.filter(
-                        p => p.idPerfil === parseInt(this.filtroPerfilId)
-                    );
-                }
-
-                // ✅ Paginar manualmente
-                const total = todosLosPermisos.length;
-                const offset = (this.currentPage - 1) * this.pageSize;
-                const paginados = todosLosPermisos.slice(offset, offset + this.pageSize);
-
-                this.renderTable(paginados);
-                this.renderPagination(total, this.currentPage, this.pageSize);
+                this.modulos = await response.json();
             }
         } catch (error) {
-            this.showError('Error de conexión');
+            console.error('Error loading modulos:', error);
         }
     }
 
     populatePerfilSelects() {
-        // Select del modal
         const selectModal = document.getElementById('permisosPerfil');
         if (selectModal) {
             selectModal.innerHTML = '<option value="">Seleccione un perfil</option>';
@@ -84,7 +65,6 @@ class PermisosPerfilModule {
             });
         }
 
-        // Select del filtro
         const selectFiltro = document.getElementById('filtroPerfil');
         if (selectFiltro) {
             selectFiltro.innerHTML = '<option value="">Todos los perfiles</option>';
@@ -94,7 +74,6 @@ class PermisosPerfilModule {
         }
     }
 
-    //  Al cambiar el perfil en el modal, cargar sus permisos actuales
     async onPerfilChange() {
         const perfilId = document.getElementById('permisosPerfil').value;
 
@@ -118,51 +97,43 @@ class PermisosPerfilModule {
         }
     }
 
-   async getPermisosByPerfil(perfilId) {
-       try {
-           // ✅ Traer suficientes registros para cubrir todos los módulos
-           const response = await fetch(`/api/permisos-perfil?page=1`, {
-               headers: { 'Authorization': `Bearer ${this.token}` }
-           });
-           if (response.ok) {
-               const data = await response.json();
-               const total = data.total;
-               const pageSize = data.pageSize;
-               const totalPages = Math.ceil(total / pageSize);
+    async getPermisosByPerfil(perfilId) {
+        try {
+            const response = await fetch(`/api/permisos-perfil?page=1`, {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                const totalPages = Math.ceil(data.total / data.pageSize);
+                let todosLosPermisos = [...data.data];
 
-               let todosLosPermisos = [...data.data];
+                if (totalPages > 1) {
+                    const peticiones = [];
+                    for (let page = 2; page <= totalPages; page++) {
+                        peticiones.push(
+                            fetch(`/api/permisos-perfil?page=${page}`, {
+                                headers: { 'Authorization': `Bearer ${this.token}` }
+                            }).then(r => r.json())
+                        );
+                    }
+                    const resultados = await Promise.all(peticiones);
+                    resultados.forEach(r => {
+                        todosLosPermisos = [...todosLosPermisos, ...r.data];
+                    });
+                }
 
-               // ✅ Si hay más páginas, traerlas todas
-               if (totalPages > 1) {
-                   const peticiones = [];
-                   for (let page = 2; page <= totalPages; page++) {
-                       peticiones.push(
-                           fetch(`/api/permisos-perfil?page=${page}`, {
-                               headers: { 'Authorization': `Bearer ${this.token}` }
-                           }).then(r => r.json())
-                       );
-                   }
-                   const resultados = await Promise.all(peticiones);
-                   resultados.forEach(r => {
-                       todosLosPermisos = [...todosLosPermisos, ...r.data];
-                   });
-               }
+                return todosLosPermisos.filter(p => p.idPerfil === perfilId);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+        return [];
+    }
 
-               // ✅ Filtrar por el perfil seleccionado
-               return todosLosPermisos.filter(p => p.idPerfil === perfilId);
-           }
-       } catch (error) {
-           console.error('Error:', error);
-       }
-       return [];
-   }
-
-    //  Renderizar tabla de módulos con checkboxes
     renderModulosPermisos(permisosActuales) {
         const tbody = document.getElementById('modulosPermisosBody');
         if (!tbody) return;
 
-        //  iterar sobre this.modulos, no sobre permisos
         tbody.innerHTML = this.modulos.map(modulo => {
             const permisoExistente = permisosActuales.find(p => p.idModulo === modulo.id);
             const visible = !!permisoExistente;
@@ -210,21 +181,17 @@ class PermisosPerfilModule {
         }).join('');
     }
 
-    //  Al marcar/desmarcar "Visible" habilita/deshabilita los CRUD
     onVisibleChange(moduloId) {
         const visible = document.getElementById(`visible-${moduloId}`).checked;
         const row = document.getElementById(`row-modulo-${moduloId}`);
         const crudChecks = row.querySelectorAll('.crud-check');
-
         crudChecks.forEach(chk => {
             chk.disabled = !visible;
             if (!visible) chk.checked = false;
         });
-
         row.className = visible ? '' : 'table-light text-muted';
     }
 
-    //  Marcar/desmarcar todos los módulos
     marcarTodos(valor) {
         this.modulos.forEach(modulo => {
             const visibleChk = document.getElementById(`visible-${modulo.id}`);
@@ -241,7 +208,6 @@ class PermisosPerfilModule {
         });
     }
 
-    //  Guardar — crear/actualizar/eliminar permisos por módulo
     async savePermisos() {
         const perfilId = parseInt(document.getElementById('permisosPerfil').value);
         if (!perfilId) {
@@ -268,28 +234,19 @@ class PermisosPerfilModule {
                 };
 
                 if (permisoId) {
-                    // Actualizar existente
                     operaciones.push(fetch(`/api/permisos-perfil/${permisoId}`, {
                         method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${this.token}`
-                        },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
                         body: JSON.stringify(permiso)
                     }));
                 } else {
-                    // Crear nuevo
                     operaciones.push(fetch('/api/permisos-perfil', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${this.token}`
-                        },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
                         body: JSON.stringify(permiso)
                     }));
                 }
             } else if (permisoId) {
-                // Eliminar si existía y ahora está desmarcado
                 operaciones.push(fetch(`/api/permisos-perfil/${permisoId}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${this.token}` }
@@ -303,7 +260,6 @@ class PermisosPerfilModule {
             await this.loadPermisos();
             alert('Permisos guardados exitosamente');
         } catch (error) {
-            console.error('Error:', error);
             this.showError('Error al guardar los permisos');
         }
     }
@@ -316,7 +272,6 @@ class PermisosPerfilModule {
         new bootstrap.Modal(document.getElementById('permisosModal')).show();
     }
 
-    //  Editar abre el modal con el perfil preseleccionado
     async editPermisos(perfilId) {
         document.getElementById('permisosModalTitle').textContent = 'Editar Permisos';
         document.getElementById('permisosPerfil').value = perfilId;
@@ -326,27 +281,52 @@ class PermisosPerfilModule {
 
     filtrarPorPerfil() {
         this.filtroPerfilId = document.getElementById('filtroPerfil').value;
-        this.currentPage = 1; // siempre volver a página 1 al filtrar
+        this.currentPage = 1;
         this.loadPermisos();
     }
 
+    // ✅ Una sola definición de loadPermisos con paginación manual
     async loadPermisos() {
         try {
-            const url = this.filtroPerfilId
-                ? `/api/permisos-perfil?page=${this.currentPage}&perfilId=${this.filtroPerfilId}`
-                : `/api/permisos-perfil?page=${this.currentPage}`;
-
-            const response = await fetch(url, {
+            const response = await fetch(`/api/permisos-perfil?page=1`, {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
 
             if (response.ok) {
                 const data = await response.json();
-                const filtrados = this.filtroPerfilId
-                    ? { ...data, data: data.data.filter(p => p.idPerfil === parseInt(this.filtroPerfilId)) }
-                    : data;
-                this.renderTable(filtrados.data);
-                this.renderPagination(filtrados.total, filtrados.page, filtrados.pageSize);
+                const totalPages = Math.ceil(data.total / data.pageSize);
+                let todosLosPermisos = [...data.data];
+
+                // Traer todas las páginas
+                if (totalPages > 1) {
+                    const peticiones = [];
+                    for (let page = 2; page <= totalPages; page++) {
+                        peticiones.push(
+                            fetch(`/api/permisos-perfil?page=${page}`, {
+                                headers: { 'Authorization': `Bearer ${this.token}` }
+                            }).then(r => r.json())
+                        );
+                    }
+                    const resultados = await Promise.all(peticiones);
+                    resultados.forEach(r => {
+                        todosLosPermisos = [...todosLosPermisos, ...r.data];
+                    });
+                }
+
+                // Filtrar si hay filtro activo
+                if (this.filtroPerfilId) {
+                    todosLosPermisos = todosLosPermisos.filter(
+                        p => p.idPerfil === parseInt(this.filtroPerfilId)
+                    );
+                }
+
+                // Paginar manualmente
+                const total = todosLosPermisos.length;
+                const offset = (this.currentPage - 1) * this.pageSize;
+                const paginados = todosLosPermisos.slice(offset, offset + this.pageSize);
+
+                this.renderTable(paginados);
+                this.renderPagination(total, this.currentPage, this.pageSize);
             }
         } catch (error) {
             this.showError('Error de conexión');
@@ -361,13 +341,6 @@ class PermisosPerfilModule {
             tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay permisos registrados</td></tr>';
             return;
         }
-
-        // Agrupar por perfil para mostrar botón editar por perfil
-        const porPerfil = {};
-        permisos.forEach(p => {
-            if (!porPerfil[p.idPerfil]) porPerfil[p.idPerfil] = [];
-            porPerfil[p.idPerfil].push(p);
-        });
 
         tbody.innerHTML = permisos.map(permiso => {
             const perfil = this.perfiles.find(p => p.id === permiso.idPerfil);
@@ -384,17 +357,15 @@ class PermisosPerfilModule {
                     <td>
                         <div class="btn-group">
                             ${this.permisos.bitEditar !== false ? `
-                            <button class="btn btn-sm btn-warning"
-                                onclick="window.permisosPerfilModule.editPermisos(${permiso.idPerfil})"
-                                title="Editar permisos del perfil">
-                                <i class="fas fa-edit"></i>
-                            </button>` : ''}
+                                <button class="btn btn-sm btn-warning"
+                                    onclick="window.permisosPerfilModule.editPermisos(${permiso.idPerfil})">
+                                    <i class="fas fa-edit"></i>
+                                </button>` : ''}
                             ${this.permisos.bitEliminar !== false ? `
-                            <button class="btn btn-sm btn-danger"
-                                onclick="window.permisosPerfilModule.deletePermiso(${permiso.id})"
-                                title="Eliminar este permiso">
-                                <i class="fas fa-trash"></i>
-                            </button>` : ''}
+                                <button class="btn btn-sm btn-danger"
+                                    onclick="window.permisosPerfilModule.deletePermiso(${permiso.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>` : ''}
                         </div>
                     </td>
                 </tr>
