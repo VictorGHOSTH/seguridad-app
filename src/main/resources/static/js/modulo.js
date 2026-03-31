@@ -10,7 +10,7 @@ constructor(token, permisos = {}) {
     async init() {
         await this.loadModulos();
         this.bindEvents();
-        this.aplicarPermisos(); // ✅
+        this.aplicarPermisos();
     }
 
     aplicarPermisos() {
@@ -237,7 +237,6 @@ constructor(token, permisos = {}) {
 
            if (response.ok) {
                const modulo = await response.json();
-               // ✅ solo nombre, sin ID
                document.getElementById('detailNombre').textContent = modulo.strNombreModulo;
                new bootstrap.Modal(document.getElementById('moduloDetailModal')).show();
            } else {

@@ -10,10 +10,10 @@ class PerfilModule {
     async init() {
         await this.loadPerfiles();
         this.bindEvents();
-        this.aplicarPermisos(); // ✅ ocultar botones según permisos
+        this.aplicarPermisos(); // ocultar botones según permisos
     }
 
-    // ✅ Ocultar botón "Nuevo" si no tiene permiso de agregar
+    // Ocultar botón "Nuevo" si no tiene permiso de agregar
     aplicarPermisos() {
         const btnNuevo = document.getElementById('btnNuevoPerfil');
         if (btnNuevo && !this.permisos.bitAgregar) {

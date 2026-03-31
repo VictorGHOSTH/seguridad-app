@@ -42,16 +42,35 @@ class PermisosPerfilModule {
         }
     }
 
-    async loadModulos() {
+    async loadPermisos() {
         try {
-            const response = await fetch('/api/modulos/all', {
+            // ✅ Traer todos los permisos en una sola llamada para filtrar correctamente
+            const response = await fetch(`/api/permisos-perfil?page=1`, {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
+
             if (response.ok) {
-                this.modulos = await response.json();
+                const data = await response.json();
+
+                // ✅ Filtrar del lado del cliente si hay filtro activo
+                let todosLosPermisos = data.data;
+
+                if (this.filtroPerfilId) {
+                    todosLosPermisos = todosLosPermisos.filter(
+                        p => p.idPerfil === parseInt(this.filtroPerfilId)
+                    );
+                }
+
+                // ✅ Paginar manualmente
+                const total = todosLosPermisos.length;
+                const offset = (this.currentPage - 1) * this.pageSize;
+                const paginados = todosLosPermisos.slice(offset, offset + this.pageSize);
+
+                this.renderTable(paginados);
+                this.renderPagination(total, this.currentPage, this.pageSize);
             }
         } catch (error) {
-            console.error('Error loading modulos:', error);
+            this.showError('Error de conexión');
         }
     }
 
@@ -75,7 +94,7 @@ class PermisosPerfilModule {
         }
     }
 
-    // ✅ Al cambiar el perfil en el modal, cargar sus permisos actuales
+    //  Al cambiar el perfil en el modal, cargar sus permisos actuales
     async onPerfilChange() {
         const perfilId = document.getElementById('permisosPerfil').value;
 
@@ -101,13 +120,13 @@ class PermisosPerfilModule {
 
    async getPermisosByPerfil(perfilId) {
        try {
-           // ✅ Hacer múltiples páginas si es necesario, o traer página grande
+           //  Hacer múltiples páginas si es necesario, o traer página grande
            const response = await fetch(`/api/permisos-perfil?page=1`, {
                headers: { 'Authorization': `Bearer ${this.token}` }
            });
            if (response.ok) {
                const data = await response.json();
-               // ✅ Filtrar del lado del cliente
+               //  Filtrar del lado del cliente
                return data.data.filter(p => p.idPerfil === perfilId);
            }
        } catch (error) {
@@ -116,12 +135,12 @@ class PermisosPerfilModule {
        return [];
    }
 
-    // ✅ Renderizar tabla de módulos con checkboxes
+    //  Renderizar tabla de módulos con checkboxes
     renderModulosPermisos(permisosActuales) {
         const tbody = document.getElementById('modulosPermisosBody');
         if (!tbody) return;
 
-        // ✅ iterar sobre this.modulos, no sobre permisos
+        //  iterar sobre this.modulos, no sobre permisos
         tbody.innerHTML = this.modulos.map(modulo => {
             const permisoExistente = permisosActuales.find(p => p.idModulo === modulo.id);
             const visible = !!permisoExistente;
@@ -169,7 +188,7 @@ class PermisosPerfilModule {
         }).join('');
     }
 
-    // ✅ Al marcar/desmarcar "Visible" habilita/deshabilita los CRUD
+    //  Al marcar/desmarcar "Visible" habilita/deshabilita los CRUD
     onVisibleChange(moduloId) {
         const visible = document.getElementById(`visible-${moduloId}`).checked;
         const row = document.getElementById(`row-modulo-${moduloId}`);
@@ -183,7 +202,7 @@ class PermisosPerfilModule {
         row.className = visible ? '' : 'table-light text-muted';
     }
 
-    // ✅ Marcar/desmarcar todos los módulos
+    //  Marcar/desmarcar todos los módulos
     marcarTodos(valor) {
         this.modulos.forEach(modulo => {
             const visibleChk = document.getElementById(`visible-${modulo.id}`);
@@ -200,7 +219,7 @@ class PermisosPerfilModule {
         });
     }
 
-    // ✅ Guardar — crear/actualizar/eliminar permisos por módulo
+    //  Guardar — crear/actualizar/eliminar permisos por módulo
     async savePermisos() {
         const perfilId = parseInt(document.getElementById('permisosPerfil').value);
         if (!perfilId) {
@@ -275,7 +294,7 @@ class PermisosPerfilModule {
         new bootstrap.Modal(document.getElementById('permisosModal')).show();
     }
 
-    // ✅ Editar abre el modal con el perfil preseleccionado
+    //  Editar abre el modal con el perfil preseleccionado
     async editPermisos(perfilId) {
         document.getElementById('permisosModalTitle').textContent = 'Editar Permisos';
         document.getElementById('permisosPerfil').value = perfilId;
@@ -285,7 +304,7 @@ class PermisosPerfilModule {
 
     filtrarPorPerfil() {
         this.filtroPerfilId = document.getElementById('filtroPerfil').value;
-        this.currentPage = 1;
+        this.currentPage = 1; // siempre volver a página 1 al filtrar
         this.loadPermisos();
     }
 
