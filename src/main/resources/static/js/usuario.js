@@ -1,5 +1,5 @@
 class UsuarioModule {
-constructor(token, permisos = {}) {
+    constructor(token, permisos = {}) {
         this.token = token;
         this.permisos = permisos;
         this.currentPage = 1;
@@ -174,6 +174,10 @@ constructor(token, permisos = {}) {
         document.getElementById('usuarioPerfil').value = '';
         document.getElementById('fotoPreview').innerHTML = '';
 
+        // Limpiar cualquier clase de validación previa
+        const celularInput = document.getElementById('usuarioCelular');
+        celularInput.classList.remove('is-invalid');
+
         const modal = new bootstrap.Modal(document.getElementById('usuarioModal'));
         modal.show();
     }
@@ -198,6 +202,10 @@ constructor(token, permisos = {}) {
                 document.getElementById('usuarioCelular').value = usuario.strNumeroCelular || '';
                 document.getElementById('usuarioPerfil').value = usuario.idPerfil;
 
+                // Limpiar cualquier clase de validación previa
+                const celularInput = document.getElementById('usuarioCelular');
+                celularInput.classList.remove('is-invalid');
+
                 if (usuario.strFotoPerfil) {
                     document.getElementById('fotoPreview').innerHTML = `
                         <img src="${usuario.strFotoPerfil}" width="100" height="100" class="rounded-circle mt-2">
@@ -217,14 +225,63 @@ constructor(token, permisos = {}) {
         }
     }
 
+    // NUEVA FUNCIÓN: Validar número de teléfono de 10 dígitos
+    validatePhoneNumber(phoneNumber) {
+        // Si el campo está vacío, es válido (no es obligatorio)
+        if (!phoneNumber) {
+            return { isValid: true, message: '' };
+        }
+
+        // Eliminar espacios en blanco
+        const cleanedPhone = phoneNumber.trim();
+
+        // Validar que tenga exactamente 10 dígitos y que sean solo números
+        const phoneRegex = /^\d{10}$/;
+
+        if (!phoneRegex.test(cleanedPhone)) {
+            return {
+                isValid: false,
+                message: 'El número de teléfono debe tener exactamente 10 dígitos numéricos'
+            };
+        }
+
+        return { isValid: true, message: '' };
+    }
+
     async saveUsuario() {
         const id = document.getElementById('usuarioId').value;
+        const celularInput = document.getElementById('usuarioCelular');
+        const celularValue = celularInput.value.trim();
+
+        // Validar número de teléfono
+        const phoneValidation = this.validatePhoneNumber(celularValue);
+
+        if (!phoneValidation.isValid) {
+            // Marcar el campo como inválido
+            celularInput.classList.add('is-invalid');
+
+            // Mostrar mensaje de error
+            let errorDiv = celularInput.nextElementSibling;
+            if (!errorDiv || !errorDiv.classList.contains('invalid-feedback')) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback';
+                celularInput.parentNode.appendChild(errorDiv);
+            }
+            errorDiv.textContent = phoneValidation.message;
+
+            this.showError(phoneValidation.message);
+            return;
+        } else {
+            // Limpiar validación si es válido
+            celularInput.classList.remove('is-invalid');
+        }
+
         const usuario = {
             strNombreUsuario: document.getElementById('usuarioNombre').value.trim(),
             idPerfil: parseInt(document.getElementById('usuarioPerfil').value),
             idEstadoUsuario: parseInt(document.getElementById('usuarioEstado').value),
             strCorreo: document.getElementById('usuarioCorreo').value.trim(),
-            strNumeroCelular: document.getElementById('usuarioCelular').value.trim()
+            strNumeroCelular: celularValue
         };
 
         if (!usuario.strNombreUsuario) {
@@ -409,6 +466,26 @@ constructor(token, permisos = {}) {
                         `;
                     };
                     reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // Agregar validación en tiempo real para el campo de teléfono
+        const celularInput = document.getElementById('usuarioCelular');
+        if (celularInput) {
+            celularInput.addEventListener('input', (e) => {
+                const validation = this.validatePhoneNumber(e.target.value);
+                if (!validation.isValid && e.target.value.trim() !== '') {
+                    celularInput.classList.add('is-invalid');
+                    let errorDiv = celularInput.nextElementSibling;
+                    if (!errorDiv || !errorDiv.classList.contains('invalid-feedback')) {
+                        errorDiv = document.createElement('div');
+                        errorDiv.className = 'invalid-feedback';
+                        celularInput.parentNode.appendChild(errorDiv);
+                    }
+                    errorDiv.textContent = validation.message;
+                } else {
+                    celularInput.classList.remove('is-invalid');
                 }
             });
         }
