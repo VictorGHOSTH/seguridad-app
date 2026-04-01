@@ -54,7 +54,7 @@ class LoginApp {
             }
         } catch (error) {
             console.error('Error:', error);
-            this.showError('Error de conexión con el servidor');
+            this.showError('Credenciales inválidas o usuario inactivo');
             grecaptcha.reset();
         }
     }
